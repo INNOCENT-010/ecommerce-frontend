@@ -49,8 +49,6 @@ export default function CheckoutPage() {
     // Get cart items
     const cartItems = getCartForCheckout();
     
-    // Log the raw cart items first
-    :', cartItems);
     
     // Create payload with your real cart data
     const payload = {
@@ -88,8 +86,7 @@ export default function CheckoutPage() {
       notes: ''
     };
 
-    );
-
+    
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
     
     // FIRST: Test with debug endpoint
@@ -127,8 +124,7 @@ export default function CheckoutPage() {
       if (responseData.data && responseData.data.authorization_url) {
         window.location.href = responseData.data.authorization_url;
       } else if (responseData.authorization_url) {
-        :', responseData.authorization_url);
-        window.location.href = responseData.authorization_url;
+      
       } else {
         console.error('❌ Unexpected response structure:', responseData);
         throw new Error('No payment URL received from server');

@@ -487,7 +487,7 @@ export const paystackUtils = {
       ref: reference,
       currency: 'NGN',
       callback: onSuccess,
-      onClose: onClose || (() => ),
+      onClose: onClose,
     });
 
     handler.openIframe();

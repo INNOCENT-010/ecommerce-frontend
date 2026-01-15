@@ -52,7 +52,7 @@ export default function AdminLoginPage() {
         credentials: 'include', // Include cookies if needed
       });
 
-      ));
+    
       
       let data;
       try {
@@ -83,10 +83,7 @@ export default function AdminLoginPage() {
         localStorage.setItem('user', JSON.stringify(data.user));
         localStorage.setItem('is_admin', 'true');
         
-        + '...',
-          user: data.user.email,
-          is_admin: data.user.is_admin
-        });
+      
         
         // Redirect to admin dashboard
         router.push('/admin/dashboard');

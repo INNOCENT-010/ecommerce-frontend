@@ -50,7 +50,7 @@ const fetchWishlist = async () => {
     const result = await wishlistApi.getWishlist();
     // Check if we have groupedByMonth
     const groupedByMonth = result.groupedByMonth || {};
-    );
+    
     
     // Log each month's items
     Object.entries(groupedByMonth).forEach(([month, items]) => {
