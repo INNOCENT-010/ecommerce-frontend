@@ -1,0 +1,653 @@
+// app/components/product/ProductDetail.tsx - SIMPLE SMOOTH SLIDE
+'use client';
+
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { Minus, Plus, AlertCircle, ChevronLeft, ChevronRight, X } from 'lucide-react';
+
+import { supabase } from '@/lib/supabase';
+import { Product } from '@/app/types/product';
+import { useCart } from '@/app/context/CartonContext';
+import { useCurrency } from '@/app/context/CurrencyContext';
+import { sanitizePrice } from '@/lib/utils/priceUtils';
+
+export default function ProductDetailPage() {
+  const { slug } = useParams<{ slug: string }>();
+  const router = useRouter();
+
+  const { addToCart } = useCart();
+  const { convert } = useCurrency();
+
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const [selectedSize, setSelectedSize] = useState<string | undefined>();
+  const [selectedColor, setSelectedColor] = useState<string | undefined>();
+  const [quantity, setQuantity] = useState(1);
+  
+  // Simple image states
+  const [leftImageIndex, setLeftImageIndex] = useState(0);
+  const [rightImageIndex, setRightImageIndex] = useState(1);
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  const galleryRef = useRef<HTMLDivElement>(null);
+
+  const requiresSize = product?.sizes && product.sizes.length > 0;
+  const requiresColor = product?.colors && product.colors.length > 0;
+
+  const totalImages = product?.images?.length || 0;
+  const canGoLeft = leftImageIndex > 0;
+  const canGoRight = rightImageIndex < totalImages - 1;
+  
+
+  // Simple slide left
+  const slideLeft = useCallback(() => {
+    if (!product?.images || isAnimating || !canGoLeft) return;
+    
+    setIsAnimating(true);
+    const newRightIndex = leftImageIndex;
+    const newLeftIndex = leftImageIndex - 1;
+    
+    setTimeout(() => {
+      setLeftImageIndex(newLeftIndex);
+      setRightImageIndex(newRightIndex);
+      setIsAnimating(false);
+    }, 300);
+  }, [product?.images, isAnimating, canGoLeft, leftImageIndex]);
+
+  // Simple slide right
+  const slideRight = useCallback(() => {
+    if (!product?.images || isAnimating || !canGoRight) return;
+    
+    setIsAnimating(true);
+    const newLeftIndex = rightImageIndex;
+    const newRightIndex = rightImageIndex + 1;
+    
+    setTimeout(() => {
+      setLeftImageIndex(newLeftIndex);
+      setRightImageIndex(newRightIndex);
+      setIsAnimating(false);
+    }, 300);
+  }, [product?.images, isAnimating, canGoRight, rightImageIndex]);
+
+  // Handle touch events
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd || isAnimating) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    
+    if (isLeftSwipe && canGoRight) {
+      slideRight();
+    } else if (isRightSwipe && canGoLeft) {
+      slideLeft();
+    }
+  };
+
+  // Go to specific image pair
+  const goToImagePair = useCallback((startIndex: number) => {
+    if (!product?.images || isAnimating || startIndex < 0 || startIndex >= totalImages - 1) return;
+    
+    setIsAnimating(true);
+    setTimeout(() => {
+      setLeftImageIndex(startIndex);
+      setRightImageIndex(startIndex + 1);
+      setIsAnimating(false);
+    }, 300);
+  }, [product?.images, isAnimating, totalImages]);
+
+  // Lightbox
+  const [showLightbox, setShowLightbox] = useState(false);
+  const [lightboxImageIndex, setLightboxImageIndex] = useState(0);
+
+  const openLightbox = useCallback((imageIndex: number) => {
+    setLightboxImageIndex(imageIndex);
+    setShowLightbox(true);
+  }, []);
+
+  const nextLightboxImage = useCallback(() => {
+    if (!product?.images) return;
+    setLightboxImageIndex((prev) => (prev + 1) % product.images.length);
+  }, [product?.images]);
+
+  const prevLightboxImage = useCallback(() => {
+    if (!product?.images) return;
+    setLightboxImageIndex((prev) => (prev - 1 + product.images.length) % product.images.length);
+  }, [product?.images]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (showLightbox && product?.images) {
+        if (e.key === 'ArrowLeft') prevLightboxImage();
+        if (e.key === 'ArrowRight') nextLightboxImage();
+        if (e.key === 'Escape') setShowLightbox(false);
+      } else if (!isAnimating) {
+        if (e.key === 'ArrowLeft' && canGoLeft) slideLeft();
+        if (e.key === 'ArrowRight' && canGoRight) slideRight();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showLightbox, product?.images, prevLightboxImage, nextLightboxImage, isAnimating, canGoLeft, canGoRight, slideLeft, slideRight]);
+
+  useEffect(() => {
+    if (!slug) return;
+
+    const fetchProduct = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select(`
+            *,
+            product_images (url, alt_text, order_index)
+          `)
+          .eq('slug', slug)
+          .single();
+
+        if (error || !data) {
+          setError('Product not found');
+          setLoading(false);
+          return;
+        }
+
+        const transformedProduct: Product = {
+          id: data.id,
+          slug: data.slug,
+          name: data.name,
+          description: data.description,
+          price: data.price,
+          originalPrice: data.original_price,
+          isNew: data.is_new,
+          isSale: data.is_sale,
+          category: data.category,
+          tags: data.tags || [],
+          sizes: data.sizes || [],
+          colors: data.colors || [],
+          images: (data.product_images || [])
+            .sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0))
+            .map((img: any) => ({
+              url: img.url,
+              alt: img.alt_text || data.name
+            })),
+          created_at: data.created_at,
+          updated_at: data.updated_at
+        };
+
+        setProduct(transformedProduct);
+      } catch (err) {
+        console.error('Failed to fetch product:', err);
+        setError('Failed to load product');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProduct();
+  }, [slug]);
+
+  const validateAndAddToCart = () => {
+    if (!product) return;
+    
+    setValidationError(null);
+    
+    if (requiresSize && !selectedSize) {
+      setValidationError('Please select a size');
+      return;
+    }
+    
+    if (requiresColor && !selectedColor) {
+      setValidationError('Please select a color');
+      return;
+    }
+    
+    const sanitizedProduct = {
+      ...product,
+      price: sanitizePrice(product.price),
+      original_price: product.originalPrice ? sanitizePrice(product.originalPrice) : undefined,
+    };
+
+    for (let i = 0; i < quantity; i++) {
+      addToCart(sanitizedProduct, selectedSize, selectedColor);
+    }
+
+    router.push('/cart');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
+      </div>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <p className="text-gray-600 mb-4">{error}</p>
+        <button 
+          onClick={() => router.push('/')} 
+          className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
+        >
+          Go back home
+        </button>
+      </div>
+    );
+  }
+
+  const displayPrice = sanitizePrice(product.price);
+  const displayOriginalPrice = product.originalPrice 
+    ? sanitizePrice(product.originalPrice) 
+    : undefined;
+
+  const leftImage = product.images?.[leftImageIndex] || { url: '', alt: product.name };
+  const rightImage = product.images?.[rightImageIndex] || { url: '', alt: product.name };
+
+  return (
+    <>
+      {/* Simple smooth slide layout */}
+      <div className="w-full px-0 py-8 flex flex-col lg:flex-row gap-8 lg:gap-0">
+        
+        {/* Left Column - Image Gallery (60% width) */}
+        <div className="lg:w-[60%] flex flex-col">
+          {/* Main Image Container - 90% height */}
+          <div className="h-[90vh] relative">
+            <div 
+              ref={galleryRef}
+              className="relative w-full h-full overflow-hidden"
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEnd}
+            >
+              {/* Left Image */}
+              <div 
+                className={`absolute left-0 top-0 w-1/2 h-full bg-gray-100 overflow-hidden transition-opacity duration-300 ease-in-out ${
+                  isAnimating ? 'opacity-0' : 'opacity-100'
+                }`}
+              >
+                {leftImage.url ? (
+                  <>
+                    <Image
+                      src={leftImage.url}
+                      alt={leftImage.alt || product.name}
+                      fill
+                      className="object-cover"
+                      priority
+                      sizes="(max-width: 1024px) 50vw, 30vw"
+                      onClick={() => openLightbox(leftImageIndex)}
+                    />
+                    <div 
+                      className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors duration-300 cursor-pointer"
+                      onClick={() => openLightbox(leftImageIndex)}
+                    />
+                  </>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                    <span className="text-gray-400">No image</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Right Image */}
+              <div 
+                className={`absolute right-0 top-0 w-1/2 h-full bg-gray-100 overflow-hidden transition-opacity duration-300 ease-in-out ${
+                  isAnimating ? 'opacity-0' : 'opacity-100'
+                }`}
+              >
+                {rightImage.url ? (
+                  <>
+                    <Image
+                      src={rightImage.url}
+                      alt={rightImage.alt || product.name}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 1024px) 50vw, 30vw"
+                      onClick={() => openLightbox(rightImageIndex)}
+                    />
+                    <div 
+                      className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors duration-300 cursor-pointer"
+                      onClick={() => openLightbox(rightImageIndex)}
+                    />
+                  </>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                    <span className="text-gray-400">No image</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Navigation Arrows */}
+              <button
+                onClick={slideLeft}
+                className={`absolute left-4 top-1/2 -translate-y-1/2 w-14 h-14 flex items-center justify-center rounded-full transition-all duration-300 z-10 ${
+                  canGoLeft && !isAnimating
+                    ? 'bg-black/50 backdrop-blur-sm text-white hover:bg-black/70 hover:scale-110 cursor-pointer shadow-lg'
+                    : 'bg-gray-400/50 backdrop-blur-sm text-gray-300 cursor-not-allowed'
+                }`}
+                aria-label="Previous image"
+                disabled={!canGoLeft || isAnimating}
+              >
+                <ChevronLeft size={32} />
+              </button>
+              
+              <button
+                onClick={slideRight}
+                className={`absolute right-4 top-1/2 -translate-y-1/2 w-14 h-14 flex items-center justify-center rounded-full transition-all duration-300 z-10 ${
+                  canGoRight && !isAnimating
+                    ? 'bg-black/50 backdrop-blur-sm text-white hover:bg-black/70 hover:scale-110 cursor-pointer shadow-lg'
+                    : 'bg-gray-400/50 backdrop-blur-sm text-gray-300 cursor-not-allowed'
+                }`}
+                aria-label="Next image"
+                disabled={!canGoRight || isAnimating}
+              >
+                <ChevronRight size={32} />
+              </button>
+
+              {/* REMOVED: Image Counter */}
+
+              {/* Swipe Hint (mobile) */}
+              {totalImages > 2 && (
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-xs text-white/80 bg-black/50 px-4 py-2 rounded-full backdrop-blur-sm md:hidden z-10 animate-pulse">
+                  ← Swipe or tap arrows →
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Thumbnail Strip */}
+          {product.images && product.images.length > 0 && (
+            <div className="mt-4">
+              <div className="flex gap-2 overflow-x-auto py-3 px-2 scrollbar-hide">
+                {product.images.map((image, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      if (index < totalImages - 1) {
+                        goToImagePair(index);
+                      } else {
+                        goToImagePair(index - 1);
+                      }
+                    }}
+                    className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
+                      (index === leftImageIndex || index === rightImageIndex)
+                        ? 'border-black ring-2 ring-black/20 transform scale-105 shadow-lg' 
+                        : 'border-transparent hover:border-gray-400 hover:scale-102'
+                    }`}
+                    aria-label={`View images starting at ${index + 1}`}
+                    disabled={isAnimating}
+                  >
+                    <div className="relative w-full h-full bg-gray-100">
+                      <Image
+                        src={image.url}
+                        alt={image.alt || `${product.name} thumbnail ${index + 1}`}
+                        fill
+                        className="object-cover"
+                        sizes="80px"
+                      />
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* REMOVED: Position Indicators */}
+            </div>
+          )}
+        </div>
+
+        {/* Right Column - Product Details (40% width) */}
+        <div className="lg:w-[40%] lg:sticky lg:top-8 lg:self-start lg:px-8">
+          <div className="space-y-6 px-4 lg:px-0">
+            <div>
+              <h1 className="text-3xl lg:text-4xl font-bold mb-2">{product.name}</h1>
+              
+              <div className="flex items-center gap-3 mb-4">
+                <p className="text-2xl lg:text-3xl font-bold">
+                  {convert(displayPrice)}
+                </p>
+                
+                {displayOriginalPrice && displayOriginalPrice > displayPrice && (
+                  <>
+                    <p className="text-lg lg:text-xl text-gray-500 line-through">
+                      {convert(displayOriginalPrice)}
+                    </p>
+                    <span className="text-sm font-bold text-red-600 bg-red-50 px-3 py-1.5 rounded">
+                      {Math.round((1 - displayPrice / displayOriginalPrice) * 100)}% OFF
+                    </span>
+                  </>
+                )}
+              </div>
+
+              <p className="text-sm text-gray-500">
+                Base price: ₦{displayPrice.toLocaleString()}
+              </p>
+            </div>
+
+            {product.description && (
+              <div>
+                <h3 className="font-medium text-lg mb-2">Description</h3>
+                <p className="text-gray-600 whitespace-pre-line leading-relaxed">
+                  {product.description}
+                </p>
+              </div>
+            )}
+
+            {requiresSize && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <p className="font-medium text-lg">Size</p>
+                  <span className="text-xs text-red-500 font-medium">*</span>
+                </div>
+                <div className="flex gap-3 flex-wrap">
+                  {product.sizes.map(size => (
+                    <button
+                      key={size}
+                      onClick={() => {
+                        setSelectedSize(size);
+                        setValidationError(null);
+                      }}
+                      className={`px-6 py-3 border-2 rounded-lg transition-all duration-200 ${
+                        selectedSize === size 
+                          ? 'border-black bg-black text-white transform scale-105' 
+                          : 'border-gray-300 hover:border-black hover:bg-gray-50'
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {requiresColor && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <p className="font-medium text-lg">Color</p>
+                  <span className="text-xs text-red-500 font-medium">*</span>
+                </div>
+                <div className="flex gap-3 flex-wrap">
+                  {product.colors.map(color => (
+                    <button
+                      key={color}
+                      onClick={() => {
+                        setSelectedColor(color);
+                        setValidationError(null);
+                      }}
+                      className={`px-5 py-3 border-2 rounded-lg flex items-center gap-3 transition-all duration-200 ${
+                        selectedColor === color 
+                          ? 'border-black bg-gray-100 transform scale-105' 
+                          : 'border-gray-300 hover:border-black hover:bg-gray-50'
+                      }`}
+                    >
+                      <div 
+                        className="w-6 h-6 rounded-full border-2 border-gray-200"
+                        style={{
+                          backgroundColor: color.toLowerCase() === 'black' ? '#000' :
+                                          color.toLowerCase() === 'white' ? '#fff' :
+                                          color.toLowerCase() === 'red' ? '#ef4444' :
+                                          color.toLowerCase() === 'blue' ? '#3b82f6' :
+                                          color.toLowerCase() === 'green' ? '#10b981' :
+                                          color.toLowerCase() === 'purple' ? '#8b5cf6' :
+                                          color.toLowerCase() === 'pink' ? '#ec4899' :
+                                          color.toLowerCase() === 'yellow' ? '#f59e0b' : '#d1d5db'
+                        }}
+                      />
+                      <span className="font-medium">{color}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {validationError && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3 animate-in fade-in">
+                <AlertCircle size={20} className="text-red-500 mt-0.5 flex-shrink-0" />
+                <p className="text-red-600 font-medium">{validationError}</p>
+              </div>
+            )}
+
+            <div>
+              <p className="font-medium text-lg mb-3">Quantity</p>
+              <div className="flex items-center border-2 border-gray-300 rounded-lg w-fit overflow-hidden">
+                <button
+                  onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                  className="px-5 py-3 hover:bg-gray-100 transition-colors"
+                  disabled={quantity <= 1}
+                >
+                  <Minus size={20} />
+                </button>
+                <span className="px-8 min-w-[60px] text-center text-xl font-bold">{quantity}</span>
+                <button
+                  onClick={() => setQuantity(q => q + 1)}
+                  className="px-5 py-3 hover:bg-gray-100 transition-colors"
+                >
+                  <Plus size={20} />
+                </button>
+              </div>
+            </div>
+
+            <button
+              onClick={validateAndAddToCart}
+              className={`w-full py-4 text-lg font-bold rounded-lg transition-all duration-300 ${
+                (requiresSize && !selectedSize) || (requiresColor && !selectedColor)
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-black text-white hover:bg-gray-800 hover:shadow-lg transform hover:-translate-y-0.5 active:translate-y-0'
+              }`}
+              disabled={(requiresSize && !selectedSize) || (requiresColor && !selectedColor)}
+            >
+              Add to Cart
+            </button>
+
+            <div className="pt-6 border-t border-gray-200">
+              <ul className="text-gray-600 space-y-2">
+                {product.isNew && (
+                  <li className="flex items-center gap-2">
+                    <span className="font-medium">Status:</span>
+                    <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-sm font-medium">New Arrival</span>
+                  </li>
+                )}
+                {product.isSale && (
+                  <li className="flex items-center gap-2">
+                    <span className="font-medium">Status:</span>
+                    <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-sm font-medium">On Sale</span>
+                  </li>
+                )}
+                <li><span className="font-medium"></span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Lightbox Modal */}
+      {showLightbox && product.images && (
+        <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4 animate-in fade-in">
+          <button
+            onClick={() => setShowLightbox(false)}
+            className="absolute top-6 right-6 text-white p-3 hover:bg-white/10 rounded-full transition-colors z-50"
+            aria-label="Close lightbox"
+          >
+            <X size={32} />
+          </button>
+
+          <div className="relative w-full h-full flex items-center justify-center">
+            {product.images.length > 1 && (
+              <>
+                <button
+                  onClick={prevLightboxImage}
+                  className="absolute left-4 lg:left-8 top-1/2 -translate-y-1/2 w-16 h-16 flex items-center justify-center rounded-full bg-white/30 backdrop-blur-sm text-white transition-all hover:bg-white/40 hover:scale-110 z-30"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft size={36} />
+                </button>
+                
+                <button
+                  onClick={nextLightboxImage}
+                  className="absolute right-4 lg:right-8 top-1/2 -translate-y-1/2 w-16 h-16 flex items-center justify-center rounded-full bg-white/30 backdrop-blur-sm text-white transition-all hover:bg-white/40 hover:scale-110 z-30"
+                  aria-label="Next image"
+                >
+                  <ChevronRight size={36} />
+                </button>
+              </>
+            )}
+
+            <div className="relative w-full h-4/5 max-w-4xl">
+              <Image
+                src={product.images[lightboxImageIndex].url}
+                alt={product.images[lightboxImageIndex].alt || product.name}
+                fill
+                className="object-contain"
+                sizes="100vw"
+                priority
+              />
+            </div>
+
+            <div className="absolute bottom-20 left-0 right-0 overflow-x-auto flex justify-center gap-3 py-4 px-4 scrollbar-hide">
+              {product.images.map((image, index) => (
+                <button
+                  key={index}
+                  onClick={() => setLightboxImageIndex(index)}
+                  className={`flex-shrink-0 w-20 h-20 rounded overflow-hidden border-3 transition-all duration-300 ${
+                    lightboxImageIndex === index 
+                      ? 'border-white ring-4 ring-white/20 transform scale-110' 
+                      : 'border-transparent hover:border-white/50 hover:scale-105'
+                  }`}
+                  aria-label={`View image ${index + 1}`}
+                >
+                  <div className="relative w-full h-full bg-gray-800">
+                    <Image
+                      src={image.url}
+                      alt={image.alt || `${product.name} thumbnail ${index + 1}`}
+                      fill
+                      className="object-cover"
+                      sizes="80px"
+                    />
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

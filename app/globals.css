@@ -1,26 +1,201 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* For touch swiping on mobile */
+@media (max-width: 768px) {
+  .slider-container {
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .slider-container::-webkit-scrollbar {
+    display: none;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInFromBottom {
+  from { transform: translate(-50%, 10px); }
+  to { transform: translate(-50%, 0); }
+}
+
+.animate-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.slide-in-from-bottom-5 {
+  animation: slideInFromBottom 0.2s ease-out;
+}
+
+/* Luxury gold animation effects */
+@keyframes luxuryGoldPulse {
+  0% {
+    background-color: #000000;
+    box-shadow: 0 0 0 0 rgba(212, 175, 55, 0);
+  }
+  50% {
+    background-color: #d4af37; /* Rich gold color */
+    box-shadow: 0 0 20px 5px rgba(212, 175, 55, 0.3);
+  }
+  100% {
+    background-color: #000000;
+    box-shadow: 0 0 0 0 rgba(212, 175, 55, 0);
+  }
+}
+
+@keyframes luxuryGoldBorder {
+  0% {
+    border-color: #000000;
+  }
+  50% {
+    border-color: #d4af37;
+  }
+  100% {
+    border-color: #000000;
+  }
+}
+
+@keyframes luxuryGoldText {
+  0% {
+    color: #ffffff;
+    text-shadow: 0 0 0 rgba(212, 175, 55, 0);
+  }
+  50% {
+    color: #ffd700; /* Brighter gold for text */
+    text-shadow: 0 0 8px rgba(212, 175, 55, 0.5);
+  }
+  100% {
+    color: #ffffff;
+    text-shadow: 0 0 0 rgba(212, 175, 55, 0);
+  }
+}
+
+/* Luxury button classes */
+.luxury-black-button {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.luxury-black-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.4), transparent);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s ease-out, height 0.6s ease-out;
+}
+
+.luxury-black-button:active::before {
+  width: 300px;
+  height: 300px;
+  opacity: 0;
+}
+
+.luxury-black-button:active {
+  animation: luxuryGoldPulse 0.6s ease-out;
+}
+
+.luxury-black-button.border-button:active {
+  animation: luxuryGoldBorder 0.6s ease-out;
+}
+
+.luxury-black-button.gold-text:active {
+  animation: luxuryGoldText 0.6s ease-out;
+}
+
+/* Shimmer effect for continuous luxury feel */
+.luxury-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.luxury-shimmer::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(212, 175, 55, 0.1) 50%,
+    transparent 100%
+  );
+  transform: rotate(30deg);
+  transition: transform 0.6s ease-out;
+}
+
+.luxury-shimmer:hover::after {
+  transform: rotate(30deg) translateX(100%);
+}
+
+/* Add to your existing globals.css */
+
+/* Smooth page transitions */
+.page-transition-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+.page-transition-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.page-transition-exit-active {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 300ms, transform 300ms;
+}
+
+/* Smooth filter transitions */
+.filter-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Product card hover effects */
+.product-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom scrollbar for filter dropdowns */
+.filter-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.filter-dropdown::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.filter-dropdown::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.filter-dropdown::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }

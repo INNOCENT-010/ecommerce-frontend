@@ -1,0 +1,34 @@
+import ProductGrid from '@/app/components/product/ProductGrid';
+import Breadcrumb from '@/app/components/layout/Breadcrumb';
+
+export default function NewYearsEvePage() {
+  return (
+    <main className="min-h-screen bg-white">
+      <Breadcrumb 
+        items={[
+          { label: 'Home', href: '/' },
+          { label: 'Occasion', href: '/occasion' },
+          { label: 'Edits', href: '/occasion/edits' },
+          { label: 'New Year\'s Eve' }
+        ]}
+      />
+      
+      {/* Your existing New Year's Eve page content */}
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <div className="inline-block bg-gradient-to-r from-gold-600 to-silver-600 text-white text-xs px-4 py-1 rounded-full font-bold tracking-wider mb-4">
+            NEW YEAR'S EVE
+          </div>
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            New Year's Eve Collection
+          </h1>
+          <p className="text-gray-600">
+            Sparkling styles to welcome the new year in glamour
+          </p>
+        </div>
+        
+        <ProductGrid category="new-years-eve" />
+      </div>
+    </main>
+  );
+}
