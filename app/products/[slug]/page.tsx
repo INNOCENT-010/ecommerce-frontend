@@ -15,5 +15,5 @@ export default function ProductPage({ params }: PageProps) {
     notFound();
   }
   
-  return <ProductDetail slug={slug} />;
+  return <ProductDetail />;
 }

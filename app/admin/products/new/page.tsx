@@ -173,7 +173,7 @@ export default function AddProductPage() {
       let categorySpecificTags: string[] = []
       
       if (categoryName.includes('dress')) {
-        categorySpecificTags = ALL_TAGS_BY_CATEGORY.dresses
+        categorySpecificTags = ALL_TAGS_BY_CATEGORY.Dresses
       } else if (categoryName.includes('new')) {
         categorySpecificTags = ALL_TAGS_BY_CATEGORY['new-in']
       } else if (categoryName.includes('occasion')) {

@@ -569,7 +569,7 @@ export const adminAPI = {
     for (const endpoint of endpoints) {
       try {
         const response = await fetch(`${API_URL}${endpoint}`, { 
-          headers,
+          headers:headers as any,
           method: endpoint.includes('/dashboard/stats') ? 'GET' : 'GET'
         });
         results[endpoint] = response.ok;

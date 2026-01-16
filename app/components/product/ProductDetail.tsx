@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { Minus, Plus, AlertCircle, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 import { supabase } from '@/lib/supabase';
-import { Product } from '@/app/types/product';
+import { Product, ProductImage } from '@/app/types/product';
 import { useCart } from '@/app/context/CartonContext';
 import { useCurrency } from '@/app/context/CurrencyContext';
 import { sanitizePrice } from '@/lib/utils/priceUtils';
@@ -38,14 +38,36 @@ export default function ProductDetailPage() {
   const requiresSize = product?.sizes && product.sizes.length > 0;
   const requiresColor = product?.colors && product.colors.length > 0;
 
-  const totalImages = product?.images?.length || 0;
+  // Helper function to get images array in consistent format
+  const getProductImages = (): ProductImage[] => {
+    if (!product) return [];
+    
+    if (Array.isArray(product.image)) {
+      // If it's already an array of ProductImage objects
+      if (product.image.length > 0 && typeof product.image[0] === 'object') {
+        return product.image as ProductImage[];
+      }
+      // If it's an array of strings
+      return (product.image as string[]).map(url => ({ url, alt: product.name }));
+    }
+    
+    // If it's a single string
+    if (typeof product.image === 'string') {
+      return [{ url: product.image, alt: product.name }];
+    }
+    
+    return [];
+  };
+
+  const productImages = getProductImages();
+  const totalImages = productImages.length;
   const canGoLeft = leftImageIndex > 0;
   const canGoRight = rightImageIndex < totalImages - 1;
   
 
   // Simple slide left
   const slideLeft = useCallback(() => {
-    if (!product?.images || isAnimating || !canGoLeft) return;
+    if (isAnimating || !canGoLeft) return;
     
     setIsAnimating(true);
     const newRightIndex = leftImageIndex;
@@ -56,11 +78,11 @@ export default function ProductDetailPage() {
       setRightImageIndex(newRightIndex);
       setIsAnimating(false);
     }, 300);
-  }, [product?.images, isAnimating, canGoLeft, leftImageIndex]);
+  }, [isAnimating, canGoLeft, leftImageIndex]);
 
   // Simple slide right
   const slideRight = useCallback(() => {
-    if (!product?.images || isAnimating || !canGoRight) return;
+    if (isAnimating || !canGoRight) return;
     
     setIsAnimating(true);
     const newLeftIndex = rightImageIndex;
@@ -71,7 +93,7 @@ export default function ProductDetailPage() {
       setRightImageIndex(newRightIndex);
       setIsAnimating(false);
     }, 300);
-  }, [product?.images, isAnimating, canGoRight, rightImageIndex]);
+  }, [isAnimating, canGoRight, rightImageIndex]);
 
   // Handle touch events
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -103,7 +125,7 @@ export default function ProductDetailPage() {
 
   // Go to specific image pair
   const goToImagePair = useCallback((startIndex: number) => {
-    if (!product?.images || isAnimating || startIndex < 0 || startIndex >= totalImages - 1) return;
+    if (isAnimating || startIndex < 0 || startIndex >= totalImages - 1) return;
     
     setIsAnimating(true);
     setTimeout(() => {
@@ -111,7 +133,7 @@ export default function ProductDetailPage() {
       setRightImageIndex(startIndex + 1);
       setIsAnimating(false);
     }, 300);
-  }, [product?.images, isAnimating, totalImages]);
+  }, [isAnimating, totalImages]);
 
   // Lightbox
   const [showLightbox, setShowLightbox] = useState(false);
@@ -123,19 +145,17 @@ export default function ProductDetailPage() {
   }, []);
 
   const nextLightboxImage = useCallback(() => {
-    if (!product?.images) return;
-    setLightboxImageIndex((prev) => (prev + 1) % product.images.length);
-  }, [product?.images]);
+    setLightboxImageIndex((prev) => (prev + 1) % productImages.length);
+  }, [productImages.length]);
 
   const prevLightboxImage = useCallback(() => {
-    if (!product?.images) return;
-    setLightboxImageIndex((prev) => (prev - 1 + product.images.length) % product.images.length);
-  }, [product?.images]);
+    setLightboxImageIndex((prev) => (prev - 1 + productImages.length) % productImages.length);
+  }, [productImages.length]);
 
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (showLightbox && product?.images) {
+      if (showLightbox) {
         if (e.key === 'ArrowLeft') prevLightboxImage();
         if (e.key === 'ArrowRight') nextLightboxImage();
         if (e.key === 'Escape') setShowLightbox(false);
@@ -147,7 +167,7 @@ export default function ProductDetailPage() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showLightbox, product?.images, prevLightboxImage, nextLightboxImage, isAnimating, canGoLeft, canGoRight, slideLeft, slideRight]);
+  }, [showLightbox, prevLightboxImage, nextLightboxImage, isAnimating, canGoLeft, canGoRight, slideLeft, slideRight]);
 
   useEffect(() => {
     if (!slug) return;
@@ -170,27 +190,28 @@ export default function ProductDetailPage() {
           return;
         }
 
+        // Transform data to match Product interface
         const transformedProduct: Product = {
           id: data.id,
           slug: data.slug,
           name: data.name,
-          description: data.description,
+          created_at: data.created_at,
+          description: data.description || '',
           price: data.price,
-          originalPrice: data.original_price,
-          isNew: data.is_new,
-          isSale: data.is_sale,
-          category: data.category,
+          originalPrice: data.original_price || undefined,
+          isNew: data.is_new || false,
+          isSale: data.is_sale || false,
+          category: data.category || '',
           tags: data.tags || [],
           sizes: data.sizes || [],
           colors: data.colors || [],
-          images: (data.product_images || [])
+          // Ensure image is in correct format
+          image: (data.product_images || [])
             .sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0))
             .map((img: any) => ({
-              url: img.url,
+              url: img.url || '',
               alt: img.alt_text || data.name
-            })),
-          created_at: data.created_at,
-          updated_at: data.updated_at
+            }))
         };
 
         setProduct(transformedProduct);
@@ -223,7 +244,7 @@ export default function ProductDetailPage() {
     const sanitizedProduct = {
       ...product,
       price: sanitizePrice(product.price),
-      original_price: product.originalPrice ? sanitizePrice(product.originalPrice) : undefined,
+      originalPrice: product.originalPrice ? sanitizePrice(product.originalPrice) : undefined,
     };
 
     for (let i = 0; i < quantity; i++) {
@@ -260,8 +281,8 @@ export default function ProductDetailPage() {
     ? sanitizePrice(product.originalPrice) 
     : undefined;
 
-  const leftImage = product.images?.[leftImageIndex] || { url: '', alt: product.name };
-  const rightImage = product.images?.[rightImageIndex] || { url: '', alt: product.name };
+  const leftImage = productImages[leftImageIndex] || { url: '', alt: product.name };
+  const rightImage = productImages[rightImageIndex] || { url: '', alt: product.name };
 
   return (
     <>
@@ -363,8 +384,6 @@ export default function ProductDetailPage() {
                 <ChevronRight size={32} />
               </button>
 
-              {/* REMOVED: Image Counter */}
-
               {/* Swipe Hint (mobile) */}
               {totalImages > 2 && (
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-xs text-white/80 bg-black/50 px-4 py-2 rounded-full backdrop-blur-sm md:hidden z-10 animate-pulse">
@@ -375,10 +394,10 @@ export default function ProductDetailPage() {
           </div>
 
           {/* Thumbnail Strip */}
-          {product.images && product.images.length > 0 && (
+          {productImages.length > 0 && (
             <div className="mt-4">
               <div className="flex gap-2 overflow-x-auto py-3 px-2 scrollbar-hide">
-                {product.images.map((image, index) => (
+                {productImages.map((image, index) => (
                   <button
                     key={index}
                     onClick={() => {
@@ -408,8 +427,6 @@ export default function ProductDetailPage() {
                   </button>
                 ))}
               </div>
-
-              {/* REMOVED: Position Indicators */}
             </div>
           )}
         </div>
@@ -571,7 +588,6 @@ export default function ProductDetailPage() {
                     <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-sm font-medium">On Sale</span>
                   </li>
                 )}
-                <li><span className="font-medium"></span></li>
               </ul>
             </div>
           </div>
@@ -579,7 +595,7 @@ export default function ProductDetailPage() {
       </div>
 
       {/* Lightbox Modal */}
-      {showLightbox && product.images && (
+      {showLightbox && productImages.length > 0 && (
         <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4 animate-in fade-in">
           <button
             onClick={() => setShowLightbox(false)}
@@ -590,7 +606,7 @@ export default function ProductDetailPage() {
           </button>
 
           <div className="relative w-full h-full flex items-center justify-center">
-            {product.images.length > 1 && (
+            {productImages.length > 1 && (
               <>
                 <button
                   onClick={prevLightboxImage}
@@ -612,8 +628,8 @@ export default function ProductDetailPage() {
 
             <div className="relative w-full h-4/5 max-w-4xl">
               <Image
-                src={product.images[lightboxImageIndex].url}
-                alt={product.images[lightboxImageIndex].alt || product.name}
+                src={productImages[lightboxImageIndex].url}
+                alt={productImages[lightboxImageIndex].alt || product.name}
                 fill
                 className="object-contain"
                 sizes="100vw"
@@ -622,7 +638,7 @@ export default function ProductDetailPage() {
             </div>
 
             <div className="absolute bottom-20 left-0 right-0 overflow-x-auto flex justify-center gap-3 py-4 px-4 scrollbar-hide">
-              {product.images.map((image, index) => (
+              {productImages.map((image, index) => (
                 <button
                   key={index}
                   onClick={() => setLightboxImageIndex(index)}

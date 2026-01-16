@@ -42,7 +42,7 @@ export default function DownloadStatsPage() {
       <div className="bg-white p-6 rounded-lg shadow">
         <h2 className="text-xl font-semibold mb-4">Top Downloaded Products</h2>
         
-        {stats?.top_downloaded && stats.top_downloaded.length > 0 ? (
+        {stats?.top_products && stats.top_products.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead>
@@ -54,26 +54,26 @@ export default function DownloadStatsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {stats.top_downloaded.map((product) => (
-                  <tr key={product.id}>
+                {stats.top_products.map((product) => (
+                  <tr key={product.product_id}>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                      <div className="text-sm font-medium text-gray-900">{product.product_name}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500">{product.category}</div>
+                      <div className="text-sm text-gray-500"></div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-semibold text-green-600">{product.download_count}</div>
+                      <div className="text-sm font-semibold text-green-600">{product.downloads}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <button
-                        onClick={() => window.open(`/products/${product.id}`, '_blank')}
+                        onClick={() => window.open(`/products/${product.product_id}`, '_blank')}
                         className="text-pink-600 hover:text-pink-800 mr-4"
                       >
                         View
                       </button>
                       <button
-                        onClick={() => window.open(`/admin/products/${product.id}`, '_blank')}
+                        onClick={() => window.open(`/admin/products/${product.product_id}`, '_blank')}
                         className="text-blue-600 hover:text-blue-800"
                       >
                         Edit

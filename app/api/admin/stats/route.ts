@@ -1,39 +1,28 @@
-//api/admin/stats/route.ts
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 
 export async function GET(request: Request) {
   try {
-    
-
     const { searchParams } = new URL(request.url);
     const format = searchParams.get('format') || 'json';
     
+    // Call your FastAPI backend
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
     
-    const orders = await prisma.order.findMany({
-      take: 100,
-      orderBy: { createdAt: 'desc' },
-      include: { user: true }
+    const response = await fetch(`${backendUrl}/api/admin/stats`, {
+      headers: {
+        'Authorization': request.headers.get('Authorization') || '',
+      },
     });
 
-    
-    const stats = {
-      totalOrders: await prisma.order.count(),
-      totalRevenue: await prisma.order.aggregate({
-        _sum: { total: true }
-      }),
-      recentOrders: orders.map(order => ({
-        id: order.id,
-        customer: order.user?.email || 'Guest',
-        total: order.total,
-        status: order.status,
-        date: order.createdAt.toISOString().split('T')[0]
-      }))
-    };
+    if (!response.ok) {
+      throw new Error(`Backend error: ${response.status}`);
+    }
 
-    
+    const stats = await response.json();
+
+    // Format to CSV if requested
     if (format === 'csv') {
-      const csv = convertToCSV(stats.recentOrders);
+      const csv = convertToCSV(stats.recentOrders || []);
       return new NextResponse(csv, {
         headers: {
           'Content-Type': 'text/csv',
@@ -46,7 +35,7 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error('Stats API error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Failed to fetch statistics' },
       { status: 500 }
     );
   }

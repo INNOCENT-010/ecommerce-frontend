@@ -4,12 +4,34 @@
 import { useCart } from '../../context/CartonContext'; // ← FIXED IMPORT PATH
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
+const getFirstImageUrl = (images: any): string => {
+  if (!images) return '/placeholder-product.jpg';
+  
+  if (Array.isArray(images)) {
+    if (images.length === 0) return '/placeholder-product.jpg';
+    
+    const firstImage = images[0];
+    if (typeof firstImage === 'string') {
+      return firstImage;
+    } else if (firstImage && typeof firstImage === 'object' && 'url' in firstImage) {
+      return firstImage.url || '/placeholder-product.jpg';
+    }
+    return '/placeholder-product.jpg';
+  }
+  
+  // If images is a single string
+  if (typeof images === 'string') {
+    return images;
+  }
+  
+  return '/placeholder-product.jpg';
+};
 
 interface OrderSummaryProps { 
   shippingData?: any;
   currentStep?: number;
 }
-
+  
 export default function OrderSummary({ shippingData, currentStep = 1 }: OrderSummaryProps) {
   const { items: cartItems, totalPrice } = useCart(); // This should work now
   
@@ -24,7 +46,7 @@ export default function OrderSummary({ shippingData, currentStep = 1 }: OrderSum
   // Calculate shipping
   const shipping = totalPrice >= 50000 ? 0 : 2000;
   const grandTotal = totalPrice + shipping - discount;
-
+  
   if (cartItems.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-md p-6 sticky top-6">
@@ -55,19 +77,19 @@ export default function OrderSummary({ shippingData, currentStep = 1 }: OrderSum
             <div key={`${item.id}-${item.selectedSize}-${item.selectedColor}`} className="flex items-start space-x-3">
               {/* Product Image */}
               <div className="w-16 h-16 bg-gray-100 rounded-md flex-shrink-0 overflow-hidden">
-                {item.images?.[0]?.url ? (
+                
                   <Image
-                    src={item.images[0].url}
+                    src={getFirstImageUrl(item.image)}
                     alt={item.name}
                     width={64}
                     height={64}
                     className="w-full h-full object-cover"
                   />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    <span className="text-lg">📦</span>
-                  </div>
-                )}
+                
+                
+                    
+                  
+                
               </div>
 
               {/* Product Details */}

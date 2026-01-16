@@ -1,7 +1,7 @@
 // lib/supabase.ts
 import { createClient } from '@supabase/supabase-js'
-import { Category, ProductImage } from '@/app/types'
-
+import { ProductImage } from '@/app/types/media'
+import { Category } from '@/app/types/category'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 

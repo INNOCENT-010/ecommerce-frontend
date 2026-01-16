@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import ProductCard from './ProductCard';
-import { Filter, Grid3x3, Grid2x2, Tag, Loader2, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Filter, Grid3x3, Grid2x2, Tag, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Product } from '@/app/types/product';
 
@@ -54,6 +54,50 @@ const createRows = (products: Product[], firstCardBigger: boolean) => {
   return rows;
 };
 
+// Helper function to transform Supabase data to Product format
+const transformSupabaseProduct = (item: any): Product => {
+  // Handle images - could be array of URLs or single URL
+  let imageValue: string | string[];
+  
+  if (item.product_images && Array.isArray(item.product_images) && item.product_images.length > 0) {
+    // If we have product_images array, extract URLs
+    const sortedImages = item.product_images
+      .sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0));
+    
+    imageValue = sortedImages.map((img: any) => img.url || '');
+  } else if (item.image) {
+    // If there's already an image field
+    imageValue = item.image;
+  } else {
+    // Fallback
+    imageValue = 'https://via.placeholder.com/600x800/cccccc/969696?text=Product';
+  }
+
+  // Ensure image is in correct format for Product interface
+  if (Array.isArray(imageValue) && imageValue.length === 0) {
+    imageValue = 'https://via.placeholder.com/600x800/cccccc/969696?text=Product';
+  } else if (Array.isArray(imageValue) && imageValue.length === 1) {
+    imageValue = imageValue[0];
+  }
+
+  return {
+    id: item.id,
+    slug: item.slug,
+    created_at: item.created_at,
+    name: item.name,
+    description: item.description || '',
+    price: item.price,
+    originalPrice: item.original_price,
+    image: imageValue,
+    category: item.category || '',
+    colors: item.colors || [],
+    sizes: item.sizes || [],
+    isNew: item.tags?.includes('new') || item.is_new || false,
+    isSale: item.original_price && item.original_price > item.price,
+    tags: item.tags || []
+  };
+};
+
 export default function ProductGrid({ 
   category, 
   tag,
@@ -70,7 +114,7 @@ export default function ProductGrid({
   const [activeFilters, setActiveFilters] = useState<Record<string, string[]>>({});
   const [pendingFilters, setPendingFilters] = useState<Record<string, string[]>>({});
   const [sortBy, setSortBy] = useState('featured');
-  const [gridView, setGridView] = useState<'grid-4' | 'grid-8'>(viewMode);
+  const [gridView, setGridView] = useState<'grid-3' | 'grid-4' | 'grid-8'>(viewMode);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [availableSizes, setAvailableSizes] = useState<string[]>([]);
   const [availableColors, setAvailableColors] = useState<string[]>([]);
@@ -142,32 +186,7 @@ export default function ProductGrid({
           return;
         }
         
-        const transformedProducts: Product[] = data.map((item: any) => {
-          const images = (item.product_images || [])
-            .sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0))
-            .map((img: any) => ({
-              url: img.url || 'https://via.placeholder.com/600x800/cccccc/969696?text=Product',
-              alt: img.alt_text || item.name
-            }));
-          
-          return {
-            id: item.id,
-            slug: item.slug,
-            name: item.name,
-            description: item.description,
-            price: item.price,
-            originalPrice: item.original_price,
-            isNew: item.tags?.includes('new') || item.is_new,
-            isSale: item.original_price && item.original_price > item.price,
-            category: item.category,
-            tags: item.tags || [],
-            sizes: item.sizes || [],
-            colors: item.colors || [],
-            images: images,
-            created_at: item.created_at,
-            updated_at: item.updated_at
-          };
-        });
+        const transformedProducts: Product[] = data.map(transformSupabaseProduct);
         
         setAllProducts(transformedProducts);
         
@@ -251,32 +270,7 @@ export default function ProductGrid({
           console.error('Supabase query error:', error);
           fetchedProducts = [];
         } else if (data) {
-          fetchedProducts = data.map((item: any) => {
-            const images = (item.product_images || [])
-              .sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0))
-              .map((img: any) => ({
-                url: img.url || 'https://via.placeholder.com/600x800/cccccc/969696?text=Product',
-                alt: img.alt_text || item.name
-              }));
-            
-            return {
-              id: item.id,
-              slug: item.slug,
-              name: item.name,
-              description: item.description,
-              price: item.price,
-              originalPrice: item.original_price,
-              isNew: item.tags?.includes('new') || item.is_new,
-              isSale: item.original_price && item.original_price > item.price,
-              category: item.category,
-              tags: item.tags || [],
-              sizes: item.sizes || [],
-              colors: item.colors || [],
-              images: images,
-              created_at: item.created_at,
-              updated_at: item.updated_at
-            };
-          });
+          fetchedProducts = data.map(transformSupabaseProduct);
         }
       } else {
         const { data, error } = await supabase
@@ -291,32 +285,7 @@ export default function ProductGrid({
           console.error('Supabase query error:', error);
           fetchedProducts = [];
         } else if (data) {
-          fetchedProducts = data.map((item: any) => {
-            const images = (item.product_images || [])
-              .sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0))
-              .map((img: any) => ({
-                url: img.url || 'https://via.placeholder.com/600x800/cccccc/969696?text=Product',
-                alt: img.alt_text || item.name
-              }));
-            
-            return {
-              id: item.id,
-              slug: item.slug,
-              name: item.name,
-              description: item.description,
-              price: item.price,
-              originalPrice: item.original_price,
-              isNew: item.tags?.includes('new') || item.is_new,
-              isSale: item.original_price && item.original_price > item.price,
-              category: item.category,
-              tags: item.tags || [],
-              sizes: item.sizes || [],
-              colors: item.colors || [],
-              images: images,
-              created_at: item.created_at,
-              updated_at: item.updated_at
-            };
-          });
+          fetchedProducts = data.map(transformSupabaseProduct);
         }
       }
       
@@ -375,7 +344,8 @@ export default function ProductGrid({
           case 'price-low': return a.price - b.price;
           case 'price-high': return b.price - a.price;
           case 'newest': 
-            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+            // Use default sorting if we don't have dates
+            return 0;
           default: return 0;
         }
       });
@@ -394,7 +364,7 @@ export default function ProductGrid({
     } finally {
       setLoading(false);
     }
-  }, [category, sortBy, activeFilters, tag]);
+  }, [category, sortBy, activeFilters, tag, products.length]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -402,7 +372,7 @@ export default function ProductGrid({
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [sortBy, category, tag, activeFilters]);
+  }, [sortBy, category, tag, activeFilters, fetchProducts]);
 
   const togglePendingFilter = (filterLabel: string, option: string) => {
     const newFilters = { ...pendingFilters };
@@ -764,7 +734,7 @@ export default function ProductGrid({
                     <div key={product.id} className="col-span-1 h-full">
                       <ProductCard 
                         product={product}
-                        size="default"
+                        size="normal"
                         minHeight={ROW_HEIGHT}
                       />
                     </div>
@@ -795,7 +765,7 @@ export default function ProductGrid({
                     <div className="md:col-span-1 h-full">
                       <ProductCard 
                         product={row.products[1]}
-                        size="default"
+                        size="normal"
                         minHeight={ROW_HEIGHT}
                       />
                     </div>
@@ -805,7 +775,7 @@ export default function ProductGrid({
                     <div className="md:col-span-1 h-full">
                       <ProductCard 
                         product={row.products[2]}
-                        size="default"
+                        size="normal"
                         minHeight={ROW_HEIGHT}
                       />
                     </div>

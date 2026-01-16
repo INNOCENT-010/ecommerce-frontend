@@ -27,7 +27,19 @@ export interface Category {
   created_at: string;
   updated_at?: string;
 }
-
+// Add this to your types in lib/api.ts
+export interface DownloadStats {
+  total_downloads: number;
+  top_products: Array<{
+    product_id: number;
+    product_name: string;
+    downloads: number;
+  }>;
+  downloads_by_date: Array<{
+    date: string;
+    downloads: number;
+  }>;
+}
 export interface ProductImage {
   id: number;
   product_id: number;
@@ -99,7 +111,7 @@ export interface CartItem {
   updated_at?: string;
 }
 
-export interface AddressCreate {
+export interface Address {
   full_name: string;
   phone: string;
   address_line1: string;
@@ -111,7 +123,7 @@ export interface AddressCreate {
   is_default?: boolean;
 }
 
-export interface AddressResponse extends AddressCreate {
+export interface AddressResponse extends Address {
   id: number;
   user_id: number;
   created_at: string;
@@ -123,8 +135,8 @@ export interface OrderCreatePayload {
     product_id: number;
     quantity: number;
   }>;
-  shipping_address: AddressCreate;
-  billing_address?: AddressCreate;
+  shipping_address: Address;
+  billing_address?: Address;
   payment_method: string;
   customer_note?: string;
 }
@@ -342,7 +354,7 @@ function convertSupabaseProduct(supabaseProduct: any): Product {
     sku: supabaseProduct.sku || undefined,
     is_active: true,
     is_new: supabaseProduct.tags?.includes('new') || false,
-    is_sale: original_price && original_price > price,
+    is_sale: !!(original_price && original_price > price), 
     images: images,
     colors: supabaseProduct.colors || [],
     sizes: supabaseProduct.sizes || [],
@@ -827,14 +839,14 @@ export const api = {
     return request<AddressResponse[]>('/api/');
   },
 
-  createAddress: (payload: AddressCreate) => {
+  createAddress: (payload: Address) => {
     return request<AddressResponse>('/api/', {
       method: 'POST',
       body: JSON.stringify(payload),
     }, true);
   },
 
-  updateAddress: (addressId: number, payload: AddressCreate) => {
+  updateAddress: (addressId: number, payload: Address) => {
     return request<AddressResponse>(`/api/${addressId}`, {
       method: 'PUT',
       body: JSON.stringify(payload),

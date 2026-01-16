@@ -81,26 +81,7 @@ const fetchWishlist = async () => {
   }
 };
 
-// Add a debug button to your wishlist page temporarily:
-{totalCount === 0 && !isLoading && (
-  <div className="mt-8 p-4 bg-yellow-50 rounded-lg">
-    <h4 className="font-bold text-yellow-800 mb-2">Debug Info</h4>
-    <button
-      onClick={async () => {
-        const result = await wishlistApi.getWishlist();
-        // Check auth status
-        const { data: { user } } = await supabase.auth.getUser();
-        // Check localStorage
-        if (typeof window !== 'undefined') {
-          const guestWishlist = localStorage.getItem('guest_wishlist');
-          }
-      }}
-      className="px-4 py-2 bg-yellow-600 text-white rounded text-sm"
-    >
-      Debug Wishlist
-    </button>
-  </div>
-  )}
+
   const handleRemoveFromWishlist = async (productId: string) => {
     try {
       await wishlistApi.removeFromWishlist(productId);

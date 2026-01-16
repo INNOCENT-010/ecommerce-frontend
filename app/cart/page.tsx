@@ -1,4 +1,3 @@
-// app/cart/page.tsx - UPDATED
 'use client';
 
 import { useCart } from '@/app/context/CartonContext';
@@ -8,6 +7,30 @@ import Link from 'next/link';
 
 export default function CartPage() {
   const { items, removeFromCart, updateQuantity, totalPrice, clearCart } = useCart();
+
+  // Helper function to get first image URL from any format
+  const getFirstImageUrl = (images: any): string => {
+    if (!images) return '/placeholder-product.jpg';
+    
+    if (Array.isArray(images)) {
+      if (images.length === 0) return '/placeholder-product.jpg';
+      
+      const firstImage = images[0];
+      if (typeof firstImage === 'string') {
+        return firstImage;
+      } else if (firstImage && typeof firstImage === 'object' && 'url' in firstImage) {
+        return firstImage.url || '/placeholder-product.jpg';
+      }
+      return '/placeholder-product.jpg';
+    }
+    
+    // If images is a single string
+    if (typeof images === 'string') {
+      return images;
+    }
+    
+    return '/placeholder-product.jpg';
+  };
 
   if (items.length === 0) {
     return (
@@ -39,7 +62,7 @@ export default function CartPage() {
                 className="relative w-24 h-24 rounded overflow-hidden bg-gray-100 flex-shrink-0"
               >
                 <Image
-                  src={item.images?.[0]?.url || '/placeholder-product.jpg'}
+                  src={getFirstImageUrl(item.image)}
                   alt={item.name}
                   fill
                   className="object-cover hover:scale-105 transition-transform duration-300"

@@ -46,13 +46,13 @@ export default function ProductsPage() {
       
       if (imagesError) console.error('Error fetching images:', imagesError);
       
-      // Create maps for quick lookup
-      const categoryMap = {};
+      // Create typed maps
+      const categoryMap: Record<string, string> = {};
       categoriesData.forEach(cat => {
         categoryMap[cat.id] = cat.name;
       });
       
-      const imageMap = {};
+      const imageMap: Record<string, string> = {};
       if (imagesData) {
         imagesData.forEach(img => {
           imageMap[img.product_id] = img.url;

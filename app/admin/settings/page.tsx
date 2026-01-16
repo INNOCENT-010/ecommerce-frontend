@@ -114,7 +114,9 @@ export default function SettingsPage() {
   })
 
   const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState({ type: 'success' | 'error', text: '' })
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text:string }>({
+    type: 'success', text: ''
+  })
   const [uploading, setUploading] = useState(false)
   const [isEditingZone, setIsEditingZone] = useState<string | null>(null)
   const [newZone, setNewZone] = useState({ name: '', countries: [''], rate: 0 })

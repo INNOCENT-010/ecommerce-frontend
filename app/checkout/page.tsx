@@ -4,6 +4,28 @@
 import { useState } from 'react';
 import { useCart } from '@/app/context/CartonContext';
 import { useRouter } from 'next/navigation';
+const getFirstImageUrl = (images: any): string => {
+  if (!images) return '/placeholder-product.jpg';
+  
+  if (Array.isArray(images)) {
+    if (images.length === 0) return '/placeholder-product.jpg';
+    
+    const firstImage = images[0];
+    if (typeof firstImage === 'string') {
+      return firstImage;
+    } else if (firstImage && typeof firstImage === 'object' && 'url' in firstImage) {
+      return firstImage.url || '/placeholder-product.jpg';
+    }
+    return '/placeholder-product.jpg';
+  }
+  
+  // If images is a single string
+  if (typeof images === 'string') {
+    return images;
+  }
+  
+  return '/placeholder-product.jpg';
+};
 
 export default function CheckoutPage() {
   const { items, totalPrice, getCartForCheckout } = useCart();
@@ -145,8 +167,8 @@ export default function CheckoutPage() {
   };
   // Calculate subtotal
   const subtotal = totalPrice;
-  const shipping = 0;
-  const tax = 0;
+  const shipping: number= 0;
+  const tax: number = 0;
   const grandTotal = subtotal + shipping + tax;
 
   return (
@@ -323,18 +345,18 @@ export default function CheckoutPage() {
                        className="flex items-start border-b pb-4">
                     {/* Product Image */}
                     <div className="relative w-16 h-16 rounded overflow-hidden bg-gray-100 flex-shrink-0">
-                      {item.images?.[0]?.url ? (
+                      
                         <img 
-                          src={item.images[0].url} 
+                          src={getFirstImageUrl(item.image)} 
                           alt={item.name}
                           className="w-full h-full object-cover"
                         />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                          <span className="text-xs text-gray-500">No image</span>
+                      
+        
+                     
                         </div>
-                      )}
-                    </div>
+                      
+                    
                     
                     {/* Product Details */}
                     <div className="ml-4 flex-1">

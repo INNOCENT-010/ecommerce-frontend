@@ -1,425 +1,328 @@
-// app/components/filters/ProductFilters.tsx - FIXED VERSION
 'use client';
 
-import { Filter, X, Check, ChevronDown, ChevronUp } from 'lucide-react';
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import debounce from 'lodash/debounce';
+import { useState, useEffect } from 'react';
+import { Filter, X } from 'lucide-react';
 
-interface FilterGroup {
-  id: string;
-  name: string;
-  type: 'checkbox' | 'range';
-  options?: string[];
-  min?: number;
-  max?: number;
-  step?: number;
+interface ProductFiltersProps {
+  categories?: string[];
+  colors?: string[];
+  sizes?: string[];
+  priceRanges?: { min: number; max: number }[];
+  onFilterChange?: (filters: Record<string, string[]>) => void;
+  initialFilters?: Record<string, string[]>;
 }
 
-interface FilterValues {
-  [key: string]: string[] | string;
+interface Filters {
+  [key: string]: string[];
 }
 
-export default function ProductFilters() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const [isOpen, setIsOpen] = useState(false);
-  const [pendingFilters, setPendingFilters] = useState<FilterValues>({});
-  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({});
-  const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
-  const [isApplying, setIsApplying] = useState(false);
-  
-  // Filter groups
-  const filterGroups: FilterGroup[] = [
-    {
-      id: 'category',
-      name: 'Categories',
-      type: 'checkbox',
-      options: ['Dresses', 'Tops', 'Sets', 'Sale', 'New Arrivals']
-    },
-    {
-      id: 'size',
-      name: 'Sizes',
-      type: 'checkbox',
-      options: ['XS', 'S', 'M', 'L', 'XL', 'XXL']
-    },
-    {
-      id: 'color',
-      name: 'Colors',
-      type: 'checkbox',
-      options: ['Black', 'White', 'Red', 'Blue', 'Pink', 'Green', 'Yellow']
-    },
-    {
-      id: 'price',
-      name: 'Price Range',
-      type: 'range',
-      min: 0,
-      max: 500000,
-      step: 10000
-    },
-    {
-      id: 'length',
-      name: 'Length',
-      type: 'checkbox',
-      options: ['Mini', 'Midi', 'Maxi', 'Gown']
-    }
-  ];
+export default function ProductFilters({
+  categories = [],
+  colors = [],
+  sizes = [],
+  priceRanges = [],
+  onFilterChange,
+  initialFilters = {}
+}: ProductFiltersProps) {
+  const [filters, setFilters] = useState<Filters>(initialFilters);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  // Initialize from URL
+  // Apply filters when they change
   useEffect(() => {
-    const params: FilterValues = {};
-    
-    filterGroups.forEach(group => {
-      if (group.type === 'checkbox') {
-        const values = searchParams.getAll(group.id);
-        if (values.length > 0) {
-          params[group.id] = values;
-        }
-      } else if (searchParams.has(group.id)) {
-        const value = searchParams.get(group.id);
-        if (group.id === 'price' && value?.includes('-')) {
-          params[group.id] = value;
-        } else if (value) {
-          params[group.id] = value;
-        }
-      }
-    });
+    if (onFilterChange) {
+      onFilterChange(filters);
+    }
+  }, [filters, onFilterChange]);
 
-    setAppliedFilters(params);
-    setPendingFilters(params); // Start with same as applied
-  }, [searchParams]);
-
-  const toggleGroup = (groupId: string) => {
-    setExpandedGroups(prev =>
-      prev.includes(groupId)
-        ? prev.filter(id => id !== groupId)
-        : [...prev, groupId]
-    );
-  };
-
-  const handleFilterChange = (groupId: string, value: any) => {
-    setPendingFilters(prev => {
+  const handleFilterChange = (groupId: string, value: string) => {
+    setFilters(prev => {
       const newFilters = { ...prev };
-      const group = filterGroups.find(g => g.id === groupId);
-      
-      if (group?.type === 'checkbox') {
-        const currentValues = Array.isArray(prev[groupId]) ? prev[groupId] : [];
+      const currentValues = newFilters[groupId];
+
+      // Handle both string and array cases
+      if (currentValues) {
+        const valuesArray = Array.isArray(currentValues) ? currentValues : [currentValues];
         
-        newFilters[groupId] = currentValues.includes(value)
-          ? currentValues.filter(v => v !== value)
-          : [...currentValues, value];
-          
+        newFilters[groupId] = valuesArray.includes(value)
+          ? valuesArray.filter(v => v !== value)
+          : [...valuesArray, value];
+
         // Remove empty arrays
         if (Array.isArray(newFilters[groupId]) && newFilters[groupId].length === 0) {
           delete newFilters[groupId];
         }
       } else {
-        // Range or other single value filters
-        newFilters[groupId] = value;
-        // Remove if it's the default value
-        if (value === `${group?.min}-${group?.max}` || !value) {
+        // If no current value, start with array containing the value
+        newFilters[groupId] = [value];
+      }
+
+      return newFilters;
+    });
+  };
+
+  const clearFilter = (groupId: string, value?: string) => {
+    setFilters(prev => {
+      const newFilters = { ...prev };
+      
+      if (value && newFilters[groupId]) {
+        // Cast to string[] to fix TypeScript error - we know it's always string[]
+        const values = newFilters[groupId] as string[];
+        const filtered = values.filter(v => v !== value);
+        
+        if (filtered.length > 0) {
+          newFilters[groupId] = filtered;
+        } else {
           delete newFilters[groupId];
         }
+      } else {
+        delete newFilters[groupId];
       }
       
       return newFilters;
     });
   };
 
-  // Debounced apply function for desktop auto-apply
-  const debouncedApply = useCallback(
-    debounce((filters: FilterValues) => {
-      applyFilters(filters);
-    }, 800), // 800ms delay for auto-apply on desktop
-    []
-  );
-
-  // Auto-apply on desktop when filters change
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.innerWidth >= 768) {
-      const hasChanges = JSON.stringify(pendingFilters) !== JSON.stringify(appliedFilters);
-      if (hasChanges && !isApplying) {
-        debouncedApply(pendingFilters);
-      }
-    }
-  }, [pendingFilters, appliedFilters, debouncedApply, isApplying]);
-
-  const applyFilters = (filters = pendingFilters) => {
-    setIsApplying(true);
-    
-    // Create URLSearchParams
-    const params = new URLSearchParams();
-    
-    // Add all pending filters
-    Object.entries(filters).forEach(([key, value]) => {
-      if (Array.isArray(value) && value.length > 0) {
-        params.delete(key);
-        value.forEach(v => params.append(key, v));
-      } else if (value && value !== '') {
-        params.set(key, value);
-      } else {
-        params.delete(key);
-      }
-    });
-    
-    // Preserve any existing non-filter params
-    searchParams.forEach((value, key) => {
-      if (!filterGroups.some(g => g.id === key) && key !== 'page') {
-        params.set(key, value);
-      }
-    });
-    
-    // Update URL
-    const queryString = params.toString();
-    const url = queryString ? `${pathname}?${queryString}` : pathname;
-    
-    router.replace(url, { scroll: false });
-    setAppliedFilters(filters);
-    
-    // Close mobile sidebar
-    setIsOpen(false);
-    
-    // Reset applying state
-    setTimeout(() => setIsApplying(false), 300);
+  const clearAllFilters = () => {
+    setFilters({});
   };
 
-  const clearFilters = () => {
-    setPendingFilters({});
-    setAppliedFilters({});
-    router.replace(pathname, { scroll: false });
-    setIsOpen(false);
-  };
-
-  const getSelectedCount = (filters: FilterValues) => {
-    return Object.values(filters).reduce((total, value) => {
-      if (Array.isArray(value)) return total + value.length;
-      return total + (value ? 1 : 0);
+  const getActiveFilterCount = () => {
+    return Object.values(filters).reduce((count, values) => {
+      const valuesArray = Array.isArray(values) ? values : [values];
+      return count + valuesArray.length;
     }, 0);
   };
 
-  const hasPendingChanges = JSON.stringify(pendingFilters) !== JSON.stringify(appliedFilters);
-  const pendingCount = getSelectedCount(pendingFilters);
-  const appliedCount = getSelectedCount(appliedFilters);
+  // Filter group components
+  const renderCategoryFilters = () => {
+    if (!categories.length) return null;
 
-  return (
-    <div className="relative">
-      {/* Filter Button (Mobile) */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="md:hidden flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50 transition-colors"
-      >
-        <Filter size={18} />
-        Filters
-        {appliedCount > 0 && (
-          <span className="bg-pink-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-            {appliedCount}
-          </span>
-        )}
-      </button>
-
-      {/* Filter Sidebar */}
-      <div className={`
-        ${isOpen ? 'block' : 'hidden'}
-        md:block fixed md:relative top-0 left-0 md:top-auto md:left-auto
-        w-full md:w-64 h-screen md:h-auto bg-white md:bg-transparent
-        z-50 md:z-auto p-6 md:p-0 overflow-y-auto md:overflow-visible
-        transition-transform duration-300 ease-in-out
-        ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-      `}>
-        {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
-            {isOpen && (
+    return (
+      <div className="mb-6">
+        <h3 className="font-semibold text-gray-900 mb-3">Categories</h3>
+        <div className="space-y-2">
+          {categories.map(category => {
+            const isActive = filters.category?.includes(category) || false;
+            return (
               <button
-                onClick={() => setIsOpen(false)}
-                className="md:hidden p-2 hover:bg-gray-100 rounded-full"
+                key={category}
+                onClick={() => handleFilterChange('category', category)}
+                className={`flex items-center justify-between w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                  isActive 
+                    ? 'bg-black text-white' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
               >
-                <X size={20} />
+                <span>{category}</span>
+                {isActive && <X size={14} />}
               </button>
-            )}
-          </div>
-          
-          {/* Status Indicators */}
-          <div className="space-y-2 mb-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">
-                Selected: {appliedCount}
-              </span>
-              {appliedCount > 0 && (
-                <button
-                  onClick={clearFilters}
-                  className="text-sm text-pink-600 hover:text-pink-700 flex items-center gap-1"
-                >
-                  <X size={14} />
-                  Clear all
-                </button>
-              )}
-            </div>
-            
-            {/* Pending Changes Indicator */}
-            {hasPendingChanges && (
-              <div className="flex items-center justify-between p-2 bg-blue-50 rounded-lg">
-                <span className="text-sm text-blue-700">
-                  {pendingCount - appliedCount} change{pendingCount - appliedCount !== 1 ? 's' : ''} pending
-                </span>
-                <span className="text-xs text-blue-600">
-                  {typeof window !== 'undefined' && window.innerWidth >= 768 
-                    ? 'Auto-applies in 1s' 
-                    : 'Tap Apply'}
-                </span>
-              </div>
-            )}
-          </div>
+            );
+          })}
         </div>
+      </div>
+    );
+  };
 
-        {/* Filter Groups */}
-        <div className="space-y-6">
-          {filterGroups.map((group) => (
-            <div key={group.id} className="border-b border-gray-100 pb-4 last:border-0">
+  const renderColorFilters = () => {
+    if (!colors.length) return null;
+
+    return (
+      <div className="mb-6">
+        <h3 className="font-semibold text-gray-900 mb-3">Colors</h3>
+        <div className="flex flex-wrap gap-2">
+          {colors.map(color => {
+            const isActive = filters.color?.includes(color) || false;
+            return (
               <button
-                onClick={() => toggleGroup(group.id)}
-                className="flex items-center justify-between w-full text-left mb-3 hover:text-gray-900"
+                key={color}
+                onClick={() => handleFilterChange('color', color)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-full border transition-colors ${
+                  isActive 
+                    ? 'border-black bg-black text-white' 
+                    : 'border-gray-300 hover:border-black text-gray-700'
+                }`}
+                title={color}
               >
-                <span className="font-medium text-gray-900">{group.name}</span>
-                {expandedGroups.includes(group.id) ? (
-                  <ChevronUp className="w-4 h-4 text-gray-500" />
-                ) : (
-                  <ChevronDown className="w-4 h-4 text-gray-500" />
-                )}
+                <div 
+                  className="w-4 h-4 rounded-full border"
+                  style={{ backgroundColor: color.toLowerCase() }}
+                />
+                <span className="text-sm">{color}</span>
               </button>
-              
-              {expandedGroups.includes(group.id) && (
-                <div className="space-y-3 animate-in fade-in duration-200">
-                  {group.type === 'checkbox' && group.options && (
-                    <div className="space-y-2">
-                      {group.options.map((option) => {
-                        const isSelected = Array.isArray(pendingFilters[group.id]) 
-                          ? pendingFilters[group.id].includes(option)
-                          : false;
-                        const isApplied = Array.isArray(appliedFilters[group.id]) 
-                          ? appliedFilters[group.id].includes(option)
-                          : false;
-                        
-                        return (
-                          <label
-                            key={option}
-                            className={`flex items-center cursor-pointer group hover:bg-gray-50 p-1 rounded ${
-                              isSelected !== isApplied ? 'bg-yellow-50' : ''
-                            }`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={(e) => handleFilterChange(group.id, option)}
-                              className="sr-only"
-                            />
-                            <div className={`w-5 h-5 border rounded flex items-center justify-center mr-3 transition-colors ${
-                              isSelected
-                                ? 'bg-pink-600 border-pink-600'
-                                : 'border-gray-300 group-hover:border-pink-400'
-                            } ${isSelected !== isApplied ? 'ring-2 ring-yellow-400 ring-offset-1' : ''}`}>
-                              {isSelected && <Check className="w-3 h-3 text-white" />}
-                            </div>
-                            <span className={`text-sm ${
-                              isSelected ? 'text-gray-900 font-medium' : 'text-gray-700'
-                            } ${isSelected !== isApplied ? 'text-yellow-800' : ''}`}>
-                              {option}
-                              {isSelected !== isApplied && (
-                                <span className="ml-1 text-xs text-yellow-600">
-                                  ({isApplied ? 'removing' : 'adding'})
-                                </span>
-                              )}
-                            </span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  )}
-                  
-                  {group.type === 'range' && group.id === 'price' && (
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">
-                          ₦{pendingFilters.price?.split('-')[0] || group.min}
-                        </span>
-                        <span className="text-sm text-gray-600">
-                          ₦{pendingFilters.price?.split('-')[1] || group.max}
-                        </span>
-                      </div>
-                      <div className="relative pt-2">
-                        <input
-                          type="range"
-                          min={group.min}
-                          max={group.max}
-                          step={group.step}
-                          value={pendingFilters.price?.split('-')[1] || group.max}
-                          onChange={(e) => handleFilterChange(group.id, `${group.min}-${e.target.value}`)}
-                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-pink-600"
-                        />
-                        {pendingFilters.price !== appliedFilters.price && (
-                          <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">
-                            Changed
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderSizeFilters = () => {
+    if (!sizes.length) return null;
+
+    return (
+      <div className="mb-6">
+        <h3 className="font-semibold text-gray-900 mb-3">Sizes</h3>
+        <div className="flex flex-wrap gap-2">
+          {sizes.map(size => {
+            const isActive = filters.size?.includes(size) || false;
+            return (
+              <button
+                key={size}
+                onClick={() => handleFilterChange('size', size)}
+                className={`w-10 h-10 flex items-center justify-center rounded border transition-colors ${
+                  isActive 
+                    ? 'border-black bg-black text-white' 
+                    : 'border-gray-300 hover:border-black text-gray-700'
+                }`}
+              >
+                {size}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderPriceFilters = () => {
+    if (!priceRanges.length) return null;
+
+    return (
+      <div className="mb-6">
+        <h3 className="font-semibold text-gray-900 mb-3">Price Range</h3>
+        <div className="space-y-2">
+          {priceRanges.map((range, index) => {
+            const value = `${range.min}-${range.max}`;
+            const isActive = filters.price?.includes(value) || false;
+            return (
+              <button
+                key={index}
+                onClick={() => handleFilterChange('price', value)}
+                className={`flex items-center justify-between w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                  isActive 
+                    ? 'bg-black text-white' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
+              >
+                <span>₦{range.min.toLocaleString()} - ₦{range.max.toLocaleString()}</span>
+                {isActive && <X size={14} />}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderActiveFilters = () => {
+    const activeFilters = Object.entries(filters).flatMap(([key, values]) => {
+      const valuesArray = Array.isArray(values) ? values : [values];
+      return valuesArray.map(value => ({ key, value }));
+    });
+
+    if (activeFilters.length === 0) return null;
+
+    return (
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold text-gray-900">Active Filters</h3>
+          <button
+            onClick={clearAllFilters}
+            className="text-sm text-gray-600 hover:text-black"
+          >
+            Clear all
+          </button>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {activeFilters.map((filter, index) => (
+            <div
+              key={`${filter.key}-${filter.value}-${index}`}
+              className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 rounded-full text-sm"
+            >
+              <span className="text-gray-700">
+                {filter.key}: {filter.value}
+              </span>
+              <button
+                onClick={() => clearFilter(filter.key, filter.value)}
+                className="text-gray-500 hover:text-black ml-1"
+              >
+                <X size={12} />
+              </button>
             </div>
           ))}
         </div>
+      </div>
+    );
+  };
 
-        {/* Apply Button (Mobile & when there are pending changes on desktop) */}
-        {hasPendingChanges && (
-          <div className="mt-6 pt-6 border-t border-gray-200 sticky bottom-0 bg-white">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-700">
-                  {pendingCount - appliedCount} change{pendingCount - appliedCount !== 1 ? 's' : ''} ready to apply
-                </span>
-                <button
-                  onClick={() => {
-                    setPendingFilters(appliedFilters);
-                  }}
-                  className="text-gray-500 hover:text-gray-700 text-sm"
-                >
-                  Reset changes
-                </button>
-              </div>
-              
+  return (
+    <>
+      {/* Mobile filter toggle */}
+      <div className="lg:hidden mb-4">
+        <button
+          onClick={() => setIsMobileOpen(true)}
+          className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:border-black transition-colors"
+        >
+          <Filter size={18} />
+          <span>Filters</span>
+          {getActiveFilterCount() > 0 && (
+            <span className="ml-2 px-2 py-0.5 bg-black text-white text-xs rounded-full">
+              {getActiveFilterCount()}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Mobile filter overlay */}
+      {isMobileOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setIsMobileOpen(false)} />
+          <div className="absolute right-0 top-0 h-full w-80 bg-white p-6 overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold">Filters</h2>
               <button
-                onClick={() => applyFilters()}
-                disabled={isApplying}
-                className={`w-full py-3 rounded-lg font-medium transition-all duration-300 ${
-                  isApplying
-                    ? 'bg-pink-400 cursor-not-allowed'
-                    : 'bg-pink-600 hover:bg-pink-700 text-white shadow-lg'
-                }`}
+                onClick={() => setIsMobileOpen(false)}
+                className="p-2 hover:bg-gray-100 rounded"
               >
-                {isApplying ? (
-                  <span className="flex items-center justify-center">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                    Applying...
-                  </span>
-                ) : (
-                  `Apply ${pendingCount - appliedCount} Change${pendingCount - appliedCount !== 1 ? 's' : ''}`
-                )}
+                <X size={20} />
+              </button>
+            </div>
+            
+            {renderActiveFilters()}
+            {renderCategoryFilters()}
+            {renderColorFilters()}
+            {renderSizeFilters()}
+            {renderPriceFilters()}
+            
+            <div className="mt-8">
+              <button
+                onClick={() => setIsMobileOpen(false)}
+                className="w-full bg-black text-white py-3 rounded-lg font-medium hover:bg-gray-800"
+              >
+                Apply Filters
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Desktop filters */}
+      <div className="hidden lg:block w-64">
+        {renderActiveFilters()}
+        {renderCategoryFilters()}
+        {renderColorFilters()}
+        {renderSizeFilters()}
+        {renderPriceFilters()}
+        
+        {getActiveFilterCount() > 0 && (
+          <button
+            onClick={clearAllFilters}
+            className="w-full mt-6 text-center text-gray-600 hover:text-black underline"
+          >
+            Clear all filters
+          </button>
         )}
       </div>
-      
-      {/* Backdrop for mobile */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/20 z-40 md:hidden"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
-    </div>
+    </>
   );
 }

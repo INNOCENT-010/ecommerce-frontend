@@ -151,41 +151,36 @@ function BestSellersGrid() {
   };
   
   // Convert Supabase product to Product format
-  const convertToProductFormat = (product: BestSellerProduct): Product => {
-    const sortedImages = product.product_images
-      ? [...product.product_images].sort((a, b) => (a.order_index || 0) - (b.order_index || 0))
-      : [];
-    
-    return {
-      id: product.id,
-      slug: product.slug,
-      name: product.name,
-      description: product.description || '',
-      price: product.price,
-      originalPrice: product.original_price || undefined,
-      isNew: product.tags?.some(tag => 
-        tag.toLowerCase().includes('new')
-      ) || false,
-      isSale: product.original_price !== null,
-      category: product.category,
-      tags: product.tags || [],
-      sizes: product.sizes || [],
-      colors: product.colors || [],
-      images: sortedImages.map(img => ({
-        url: img.url,
-        alt: img.alt_text || product.name
-      })),
-      created_at: product.created_at,
-      updated_at: product.created_at,
-      category_id: 0,
-      stock: 0,
-      sku: '',
-      is_active: true,
-      download_count: 0,
-      attributes: {}
-    };
-  };
+const convertToProductFormat = (product: BestSellerProduct): Product => {
+  const sortedImages = product.product_images
+    ? [...product.product_images].sort((a, b) => (a.order_index || 0) - (b.order_index || 0))
+    : [];
   
+  // Get the first image URL or use a placeholder
+  const firstImageUrl = sortedImages.length > 0 
+    ? sortedImages[0].url 
+    : '/placeholder-product.jpg';
+  
+  return {
+    id: product.id,
+    name: product.name,
+    created_at: product.created_at,
+    description: product.description || '',
+    price: product.price,
+    originalPrice: product.original_price || undefined,
+    image: firstImageUrl, // This should be a string, not an array
+    category: product.category,
+    colors: product.colors || [],
+    sizes: product.sizes || [],
+    isNew: product.tags?.some(tag => 
+      tag.toLowerCase().includes('new')
+    ) || false,
+    isSale: product.original_price !== null,
+    slug: product.slug,
+    tags: product.tags || []
+  };
+  };
+ 
   // Get products for current slide
   const getCurrentSlideProducts = () => {
     const startIndex = currentSlide * productsPerSlide;

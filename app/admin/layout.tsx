@@ -113,7 +113,7 @@ export default function AdminLayout({
     return (
       <ThemeProvider attribute="class" defaultTheme="light">
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-          <AdminHeader adminData={adminData} />
+          <AdminHeader/>
           <div className="flex pt-16">
             <AdminSidebar />
             <main className="flex-1 p-6 lg:ml-64 transition-all duration-300">

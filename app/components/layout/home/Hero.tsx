@@ -6,7 +6,7 @@ export default function Hero() {
   return (
     <section className="relative bg-gradient-to-r from-pink-100 to-purple-100 py-20 md:py-32 overflow-hidden h-screen">
       
-      {/* Currency Switcher – Right Edge */}
+      
       <CurrencySwitcher />
 
       <div className="container mx-auto px-4 text-center relative z-10">
@@ -19,10 +19,17 @@ export default function Hero() {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          {/* Shop */}
+         
           <Link
             href="/products"
             className="bg-pink-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-pink-700 transition flex items-center justify-center gap-2"
           >
             Shop New Arrivals <ArrowRight size={20} />
           </Link>
+          
+      
+        </div>
+      </div>
+    </section>
+  );
+}

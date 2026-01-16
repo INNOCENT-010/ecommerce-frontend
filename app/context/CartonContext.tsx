@@ -1,13 +1,15 @@
-// app/context/CartonContext.tsx - FIXED VERSION
 'use client';
 
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { Product } from '../types/product';
 
+// Inherit image type from Product
 interface CartItem extends Product {
   quantity: number;
   selectedSize?: string;
   selectedColor?: string;
+  slug?: string;
+  sku?: string;
 }
 
 interface CartContextType {
@@ -19,7 +21,7 @@ interface CartContextType {
   totalItems: number;
   totalPrice: number;
   getCartForCheckout: () => Array<{
-    product_id: number | string; // CHANGED: Can be string or number
+    product_id: number | string;
     name: string;
     price: number;
     quantity: number;
@@ -59,7 +61,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // Add to cart with color/size distinction
   const addToCart = (product: Product, size?: string, color?: string) => {
     setItems(prev => {
-      // Find exact match (same product + same size + same color)
       const existingItem = prev.find(
         item =>
           item.id === product.id &&
@@ -86,7 +87,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           quantity: 1,
           selectedSize: size,
           selectedColor: color,
-        },
+        } as CartItem, // Type assertion to CartItem
       ];
     });
   };
@@ -121,33 +122,48 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-  // Prepare cart data for checkout API - FIXED: Accept both string and number IDs
+  // Prepare cart data for checkout API
   const getCartForCheckout = () => {
     return items
-      .filter(item => item.id != null) // Filter out items with null/undefined id
+      .filter(item => item.id != null)
       .map(item => {
-        // Use the original id as-is (could be string UUID or number)
         const productId = item.id;
         
-        // If id is null or undefined after filtering, skip (shouldn't happen)
         if (productId == null) {
           console.warn('Item has null id after filtering:', item);
           return null;
         }
-        
+
+        // Helper to get first image URL
+        const getFirstImageUrl = (): string => {
+          if (!item.image) return '';
+          
+          if (typeof item.image === 'string') {
+            return item.image;
+          } else if (Array.isArray(item.image)) {
+            const firstItem = item.image[0];
+            if (typeof firstItem === 'string') {
+              return firstItem;
+            } else if (firstItem && typeof firstItem === 'object' && 'url' in firstItem) {
+              return firstItem.url;
+            }
+          }
+          return '';
+        };
+
         return {
-          product_id: productId, // Keep as original type (string or number)
+          product_id: productId,
           name: item.name || 'Product',
           price: Number(item.price) || 0,
           quantity: Number(item.quantity) || 1,
           size: item.selectedSize || null,
           color: item.selectedColor || null,
-          image: item.images?.[0]?.url || item.image_url || '',
+          image: getFirstImageUrl(),
           sku: item.sku || (typeof productId === 'string' ? productId : `SKU-${productId}`)
         };
       })
       .filter(item => item != null) as Array<{
-        product_id: number | string; // Can be string or number
+        product_id: number | string;
         name: string;
         price: number;
         quantity: number;

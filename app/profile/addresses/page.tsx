@@ -1,14 +1,25 @@
-// app/profile/addresses/page.tsx
+// app/profile/addresses/page.tsx - COMPLETE FIXED VERSION
 'use client';
 
 import { useEffect, useState } from 'react';
-import { api, Address } from '@/lib/api';
+import { api, AddressResponse } from '@/lib/api'; // Import AddressResponse instead of Address
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+// Create a type that matches what the API returns AND what your UI needs
+interface DisplayAddress {
+  id: number;
+  street: string;
+  city: string;
+  state: string;
+  country: string;
+  postal_code?: string;
+  is_default: boolean;
+}
+
 export default function AddressesPage() {
   const router = useRouter();
-  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [addresses, setAddresses] = useState<DisplayAddress[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,7 +30,20 @@ export default function AddressesPage() {
     }
 
     api.getUserAddresses()
-      .then(setAddresses)
+      .then((apiAddresses: AddressResponse[]) => {
+        // Transform API response to match DisplayAddress type
+        const transformedAddresses: DisplayAddress[] = apiAddresses.map(addr => ({
+          id: addr.id,
+          // Map API properties to UI properties
+          street: addr.address_line1 || 'No address',
+          city: addr.city || '',
+          state: addr.state || '',
+          country: addr.country || 'Nigeria',
+          postal_code: addr.postal_code,
+          is_default: addr.is_default || false
+        }));
+        setAddresses(transformedAddresses);
+      })
       .catch(() => {
         localStorage.removeItem('token');
         router.push('/login');

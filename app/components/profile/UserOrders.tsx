@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { Package, CheckCircle, Clock, Truck, Home, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 
-interface UserOrdersProps {
+interface UserOrders {
   userId: number | null;
 }
 
@@ -24,7 +24,7 @@ interface Order {
   items_count: number;
 }
 
-export default function UserOrders({ userId }: UserOrdersProps) {
+export default function UserOrders({ userId }: UserOrders) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

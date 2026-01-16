@@ -1,4 +1,4 @@
-// app/profile/page.tsx - CREATE THIS FILE
+// app/profile/page.tsx - COMPLETE FIXED VERSION
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -13,6 +13,24 @@ import ProductCard from '@/app/components/product/ProductCard';
 
 type ActiveTab = 'for-you' | 'orders' | 'profile';
 
+// Create a compatible product type for ProductCard
+interface ProductCardProduct {
+  id: number;
+  name: string;
+  description?: string;
+  price: number;
+  originalPrice?: number;
+  image: string | string[];
+  category: string;
+  colors?: string[];
+  sizes?: string[];
+  isNew?: boolean;
+  created_at:string;
+  isSale?: boolean;
+  tags?: string[];
+  slug?: string;
+}
+
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('for-you');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -20,8 +38,8 @@ export default function ProfilePage() {
   const [verificationCode, setVerificationCode] = useState('');
   const [isEmailSent, setIsEmailSent] = useState(false);
   const [step, setStep] = useState<'email' | 'verify' | 'profile'>('email');
-  const [recentlyViewed, setRecentlyViewed] = useState<Product[]>([]);
-  const [savedItems, setSavedItems] = useState<Product[]>([]);
+  const [recentlyViewed, setRecentlyViewed] = useState<ProductCardProduct[]>([]);
+  const [savedItems, setSavedItems] = useState<ProductCardProduct[]>([]);
   const { convert } = useCurrency();
 
   // Mock data for points
@@ -42,10 +60,10 @@ export default function ProfilePage() {
     tier: 'Gold'
   };
 
-  // Mock products
-  const mockProducts: Product[] = [
+  // Mock products compatible with ProductCard
+  const mockProducts: ProductCardProduct[] = [
     {
-      id: '1',
+      id: 1,
       name: 'Satin Corset Dress',
       description: 'Elegant satin dress with corset detailing',
       price: 89.99,
@@ -54,10 +72,13 @@ export default function ProfilePage() {
       category: 'dresses',
       colors: ['Red', 'Black'],
       sizes: ['S', 'M', 'L'],
-      isSale: true
+      isSale: true,
+      tags: ['new'],
+      created_at:'2026-01-10T09:15:00Z',
+      slug: 'satin-corset-dress'
     },
     {
-      id: '2',
+      id: 2,
       name: 'Embellished Evening Gown',
       description: 'Sparkling gown for special occasions',
       price: 199.99,
@@ -65,10 +86,13 @@ export default function ProfilePage() {
       category: 'dresses',
       colors: ['Gold', 'Silver'],
       sizes: ['XS', 'S', 'M'],
-      isNew: true
+      isNew: true,
+      tags: ['evening'],
+      slug: 'embellished-evening-gown',
+      created_at:'2026-01-10T09:15:00Z'
     },
     {
-      id: '3',
+      id: 3,
       name: 'Floral Maxi Dress',
       description: 'Lightweight floral print maxi dress',
       price: 69.99,
@@ -77,7 +101,10 @@ export default function ProfilePage() {
       category: 'dresses',
       colors: ['Pink', 'Blue'],
       sizes: ['S', 'M', 'L', 'XL'],
-      isSale: true
+      isSale: true,
+      tags: ['floral'],
+      created_at:'2026-01-10T09:15:00Z',
+      slug: 'floral-maxi-dress'
     }
   ];
 
@@ -361,7 +388,7 @@ export default function ProfilePage() {
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                     {mockProducts.slice(0, 3).map((product) => (
                       <div key={product.id}>
-                        <ProductCard product={product} />
+                        <ProductCard product={product as any} />
                       </div>
                     ))}
                   </div>
@@ -381,7 +408,7 @@ export default function ProfilePage() {
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                     {mockProducts.slice(1, 4).map((product) => (
                       <div key={product.id}>
-                        <ProductCard product={product} />
+                        <ProductCard product={product as any} />
                       </div>
                     ))}
                   </div>
@@ -403,7 +430,7 @@ export default function ProfilePage() {
                       <div key={product.id} className="group">
                         <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3">
                           <img 
-                            src={product.image} 
+                            src={typeof product.image === 'string' ? product.image : product.image[0] || '/placeholder.jpg'} 
                             alt={product.name}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                           />

@@ -1,4 +1,15 @@
-// src/lib/cart.ts (create if doesn't exist)
+// lib/cart.ts - COMPLETE FIXED VERSION
+interface CartItem {
+  id: number;
+  name: string;
+  price: number;
+  quantity: number;
+  image?: string | string[];
+  selectedSize?: string;
+  selectedColor?: string;
+  slug?: string;
+}
+
 export const cartService = {
   getCart: (): CartItem[] => {
     if (typeof window === 'undefined') return [];
@@ -10,7 +21,6 @@ export const cartService = {
     }
   },
 
-
   addToCart: (product: CartItem): CartItem[] => {
     const cart = cartService.getCart();
     const existing = cart.find(item => item.id === product.id);
@@ -21,14 +31,14 @@ export const cartService = {
       cart.push({ ...product, quantity: product.quantity || 1 });
     }
     
-    cartService.saveCart(cart);
+    localStorage.setItem('cart', JSON.stringify(cart));
     return cart;
   },
 
   removeFromCart: (id: number): CartItem[] => {
     const cart = cartService.getCart();
     const updated = cart.filter(item => item.id !== id);
-    cartService.saveCart(updated);
+    localStorage.setItem('cart', JSON.stringify(updated));
     return updated;
   },
 
@@ -38,7 +48,7 @@ export const cartService = {
     
     if (item) {
       item.quantity = quantity;
-      cartService.saveCart(cart);
+      localStorage.setItem('cart', JSON.stringify(cart));
     }
     
     return cart;

@@ -6,6 +6,28 @@ import { useRouter } from 'next/navigation';
 import { useCart } from '../../context/CartonContext';
 import { orderAPI, type CartItem as OrderCartItem } from '@/lib/order-api';
 import { validateCheckout } from '@/lib/validation';
+const getFirstImageUrl = (images: any): string => {
+  if (!images) return '/placeholder-product.jpg';
+  
+  if (Array.isArray(images)) {
+    if (images.length === 0) return '/placeholder-product.jpg';
+    
+    const firstImage = images[0];
+    if (typeof firstImage === 'string') {
+      return firstImage;
+    } else if (firstImage && typeof firstImage === 'object' && 'url' in firstImage) {
+      return firstImage.url || '/placeholder-product.jpg';
+    }
+    return '/placeholder-product.jpg';
+  }
+  
+  // If images is a single string
+  if (typeof images === 'string') {
+    return images;
+  }
+  
+  return '/placeholder-product.jpg';
+};
 
 interface PaymentFormProps {
   shippingData: any;
@@ -59,7 +81,7 @@ export default function PaymentForm({ shippingData, onBack }: PaymentFormProps) 
           name: item.name || 'Product',
           price: item.price || 0,
           quantity: item.quantity || 1,
-          image: item.images?.[0]?.url || item.image || '',
+          image: getFirstImageUrl(item.image) || '',
           size: item.selectedSize || '',
           color: item.selectedColor || '',
           sku: item.sku || ''

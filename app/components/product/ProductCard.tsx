@@ -40,17 +40,45 @@ export default function ProductCard({
   const minSwipeDistance = 50;
 
   const getProductImages = () => {
-    if (product.images && product.images.length > 0) {
-      const validImages = product.images
-        .filter(img => img && img.url && img.url.trim() !== '')
-        .map(img => img.url);
-      
-      if (validImages.length > 0) {
-        return validImages;
-      }
+  if (!product.image) return ['https://via.placeholder.com/600x800/cccccc/969696?text=Product+Image'];
+  
+  // Handle all possible cases
+  if (Array.isArray(product.image)) {
+    if (product.image.length === 0) {
+      return ['https://via.placeholder.com/600x800/cccccc/969696?text=Product+Image'];
     }
     
-    return ['https://via.placeholder.com/600x800/cccccc/969696?text=Product+Image'];
+    // Process array of images (could be strings or ProductImage objects)
+    const validImages = product.image
+      .filter(img => {
+        if (typeof img === 'string') {
+          return img && img.trim() !== '';
+        } else if (img && typeof img === 'object' && 'url' in img) {
+          // Handle ProductImage object
+          return img.url && img.url.trim() !== '';
+        }
+        return false;
+      })
+      .map(img => {
+        if (typeof img === 'string') {
+          return img;
+        } else if (img && typeof img === 'object' && 'url' in img) {
+          // Return URL from ProductImage object
+          return img.url;
+        }
+        return '';
+      })
+      .filter(url => url && url.trim() !== '');
+    
+    if (validImages.length > 0) {
+      return validImages;
+    }
+  } else if (typeof product.image === 'string' && product.image.trim() !== '') {
+    // Single string image
+    return [product.image];
+  }
+  
+  return ['https://via.placeholder.com/600x800/cccccc/969696?text=Product+Image'];
   };
 
   const productImages = getProductImages();

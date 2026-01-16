@@ -1,40 +1,32 @@
-// services/auth.ts
-import { api } from '@/lib/api';
+// services/auth.ts - FIXED VERSION
+import { api, UserInfo } from '@/lib/api'; // Import UserInfo
 
 interface LoginCredentials {
   email: string;
   password: string;
 }
 
+// Update Token interface to match what api.login() actually returns
 interface Token {
   access_token: string;
   token_type: string;
-  user: {
-    id: string;
-    email: string;
-    full_name: string;
-    is_admin: boolean;
-  };
+  user: UserInfo; // Use UserInfo type instead of custom one
 }
 
 export const authService = {
   async login(credentials: LoginCredentials): Promise<Token> {
-    const response = await api.post<Token>('/api/auth/login', credentials);
-    return response.data;
+    return await api.login(credentials.email, credentials.password);
   },
 
   async adminLogin(credentials: LoginCredentials): Promise<Token> {
-    const response = await api.post<Token>('/api/auth/admin-login', credentials);
-    return response.data;
+    return await api.adminLogin(credentials.email, credentials.password);
   },
 
-  async getCurrentUser() {
-    const response = await api.get('/api/auth/me');
-    return response.data;
+  async getCurrentUser(): Promise<UserInfo> { // Add return type
+    return await api.getCurrentUser();
   },
 
-  async logout() {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('user');
+  async logout(): Promise<void> { // Add return type
+    await api.logout();
   },
 };

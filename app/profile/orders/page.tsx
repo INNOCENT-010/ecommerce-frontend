@@ -1,8 +1,8 @@
-// app/profile/orders/page.tsx
+// app/profile/orders/page.tsx - FIXED
 'use client';
 
 import { useEffect, useState } from 'react';
-import { api, OrderResponse } from '@/lib/api';
+import { orderAPI, OrderResponse } from '@/lib/order-api';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -12,16 +12,17 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('token') || localStorage.getItem('access_token');
     if (!token) {
       router.push('/login');
       return;
     }
 
-    api.getUserOrders()
+    orderAPI.getUserOrders()
       .then(setOrders)
       .catch(() => {
         localStorage.removeItem('token');
+        localStorage.removeItem('access_token');
         router.push('/login');
       })
       .finally(() => setLoading(false));
@@ -88,7 +89,7 @@ export default function OrdersPage() {
                           <span className="font-medium">{item.product?.name || 'Product'}</span>
                           <span className="text-gray-600 ml-2">x{item.quantity}</span>
                         </div>
-                        <span>₦{(item.price * item.quantity).toFixed(2)}</span>
+                        <span>₦{(item.price_at_time * item.quantity).toFixed(2)}</span>
                       </div>
                     ))}
                   </div>

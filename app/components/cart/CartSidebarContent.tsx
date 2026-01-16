@@ -1,10 +1,33 @@
-//app/components/cart/CartSidebarContent.tsx - UPDATED
 'use client';
 
 import Image from 'next/image';
 import Link from 'next/link';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import { useCart } from '@/app/context/CartonContext';
+
+// Helper function to get first image URL from any format
+const getFirstImageUrl = (images: any): string => {
+  if (!images) return '/placeholder-product.jpg';
+  
+  if (Array.isArray(images)) {
+    if (images.length === 0) return '/placeholder-product.jpg';
+    
+    const firstImage = images[0];
+    if (typeof firstImage === 'string') {
+      return firstImage;
+    } else if (firstImage && typeof firstImage === 'object' && 'url' in firstImage) {
+      return firstImage.url || '/placeholder-product.jpg';
+    }
+    return '/placeholder-product.jpg';
+  }
+  
+  // If images is a single string
+  if (typeof images === 'string') {
+    return images;
+  }
+  
+  return '/placeholder-product.jpg';
+};
 
 export default function CartSidebarContent({ onClose }: { onClose: () => void }) {
   const { items, updateQuantity, removeFromCart, totalPrice } = useCart();
@@ -37,14 +60,12 @@ export default function CartSidebarContent({ onClose }: { onClose: () => void })
               onClick={onClose}
               className="relative w-20 h-20 mr-4 flex-shrink-0"
             >
-              {item.images?.[0]?.url && (
-                <Image
-                  src={item.images[0].url}
-                  alt={item.name}
-                  fill
-                  className="object-cover rounded hover:opacity-90 transition-opacity"
-                />
-              )}
+              <Image
+                src={getFirstImageUrl(item.image)}
+                alt={item.name}
+                fill
+                className="object-cover rounded hover:opacity-90 transition-opacity"
+              />
             </Link>
 
             <div className="flex-1 min-w-0">
