@@ -30,7 +30,9 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  
+  [data-wishlist-button] {
+  z-index: 10 !important;
+}
   /* Line clamping utilities */
   .line-clamp-1 {
     overflow: hidden;

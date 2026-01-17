@@ -414,7 +414,7 @@ export default function ProductCard({
         <button
           onClick={handleWishlistToggle}
           disabled={wishlistLoading}
-          className="absolute top-3 right-3 bg-white p-2 rounded-full shadow-lg hover:shadow-xl hover:bg-gray-50 transition-all duration-300 z-40"
+          className="absolute top-3 right-3 bg-white p-2 rounded-full shadow-lg hover:shadow-xl hover:bg-gray-50 transition-all duration-300 z-10"
           aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
           title={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
         >
@@ -428,7 +428,7 @@ export default function ProductCard({
           <button
             onClick={handleQuickAddClick}
             disabled={adding}
-            className={`absolute bottom-3 left-1/2 -translate-x-1/2 bg-black text-white px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-300 z-40 shadow-lg hover:bg-gray-800 disabled:opacity-50 whitespace-nowrap min-w-[140px] text-center min-h-[44px] flex items-center justify-center ${
+            className={`absolute bottom-3 left-1/2 -translate-x-1/2 bg-black text-white px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-300  shadow-lg hover:bg-gray-800 disabled:opacity-50 whitespace-nowrap min-w-[140px] text-center min-h-[44px] flex items-center justify-center ${
               isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
             }`}
           >

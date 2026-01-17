@@ -1,4 +1,4 @@
-// app/components/layout/header.tsx
+/// app/components/layout/header.tsx
 'use client';
 import { IMAGE_CONFIG } from '@/config/images';
 import Link from 'next/link';
@@ -496,7 +496,7 @@ export default function Header() {
                 </button>
 
                 {currencyOpen && (
-                  <div className="absolute right-0 mt-2 w-32 bg-white border rounded-lg shadow-xl z-50 overflow-hidden">
+                  <div className="absolute right-0 mt-2 w-32 bg-white border rounded-lg shadow-xl z-[9999] overflow-hidden">
                     {(['USD', 'GBP', 'EUR', 'NGN'] as const).map((cur) => (
                       <button
                         key={cur}
@@ -531,26 +531,26 @@ export default function Header() {
             </div>
           )}
 
-          {/* === DROPDOWN MENU - DESKTOP ONLY === */}
+          {/* === DROPDOWN MENU - THICK AND HIGH Z-INDEX === */}
           {activeNavItem?.dropdown && (
             <div
               ref={dropdownRef}
-              className="absolute left-0 right-0 bg-white shadow-2xl border-t border-gray-100 z-50 hidden lg:block"
+              className="absolute left-0 right-0 bg-white shadow-2xl border-t border-gray-100 z-[10000]" 
               onMouseEnter={handleMouseEnterDropdown}
               onMouseLeave={handleMouseLeaveDropdown}
               style={{ 
                 top: '100%',
               }}
             >
-              <div className="container mx-auto px-4 py-6 md:py-8">
-                <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
-                  <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+              <div className="container mx-auto px-4 py-8">
+                <div className="flex gap-12">
+                  <div className="flex-1 grid grid-cols-3 gap-12">
                     {activeNavItem.dropdown.leftContent.map((section, idx) => (
-                      <div key={idx}>
-                        <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 md:mb-4">
+                      <div key={idx} className="pb-4">
+                        <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">
                           {section.category}
                         </h4>
-                        <ul className="space-y-2 md:space-y-3">
+                        <ul className="space-y-3">
                           {section.items.map((item, itemIdx) => (
                             <li key={itemIdx}>
                               <Link
@@ -570,9 +570,10 @@ export default function Header() {
                     ))}
                   </div>
 
-                  {/* Right Image Section */}
-                  <div className="lg:w-96 relative">
-                    <div className="relative rounded-lg overflow-hidden mb-4 h-64 md:h-80">
+                  {/* Right Image Section with Supabase Integration */}
+                  <div className="w-96 relative">
+                    <div className="relative rounded-lg overflow-hidden mb-4 h-80">
+                      {/* Use Supabase image if available, otherwise fallback */}
                       {loadingImages ? (
                         <div className="w-full h-full bg-gray-200 animate-pulse rounded-lg" />
                       ) : activeDropdownImage ? (
