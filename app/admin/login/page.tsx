@@ -1,4 +1,4 @@
-// app/admin/login/page.tsx - UPDATED WITH BETTER ERROR HANDLING
+// app/admin/login/page.tsx - UPDATED WITH CORRECT RAILWAY URL
 'use client';
 import { useEffect } from 'react';
 import { useState } from 'react';
@@ -19,16 +19,16 @@ export default function AdminLoginPage() {
 
   const testBackendConnection = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/health', {
+      const response = await fetch('https://skillful-creativity-production.up.railway.app/health', {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });
       
       if (response.ok) {
         setBackendStatus('connected');
-        } else {
+      } else {
         setBackendStatus('error');
-        }
+      }
     } catch (err) {
       setBackendStatus('error');
       console.error('Backend connection error:', err);
@@ -41,18 +41,16 @@ export default function AdminLoginPage() {
     setError('');
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/auth/admin-login', {
+      const response = await fetch('https://skillful-creativity-production.up.railway.app/auth/admin-login', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
         body: JSON.stringify({ email, password }),
-        mode: 'cors', // Explicitly set CORS mode
-        credentials: 'include', // Include cookies if needed
+        mode: 'cors',
+        credentials: 'include',
       });
-
-    
       
       let data;
       try {
@@ -66,7 +64,7 @@ export default function AdminLoginPage() {
 
       if (!response.ok) {
         if (response.status === 404) {
-          throw new Error('Endpoint not found. Check if backend is running on port 8000.');
+          throw new Error('Endpoint not found. Check if backend is running.');
         } else if (response.status === 401) {
           throw new Error('Invalid email or password');
         } else if (response.status === 403) {
@@ -83,8 +81,6 @@ export default function AdminLoginPage() {
         localStorage.setItem('user', JSON.stringify(data.user));
         localStorage.setItem('is_admin', 'true');
         
-      
-        
         // Redirect to admin dashboard
         router.push('/admin/dashboard');
       } else {
@@ -97,7 +93,7 @@ export default function AdminLoginPage() {
       
       // If it's a network error, suggest troubleshooting
       if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-        setError(prev => prev + '. Make sure the backend is running on http://127.0.0.1:8000');
+        setError(prev => prev + '. Make sure the backend is running on Railway');
       }
     } finally {
       setLoading(false);
@@ -107,7 +103,7 @@ export default function AdminLoginPage() {
   const createFirstAdmin = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://127.0.0.1:8000/auth/create-first-admin', {
+      const response = await fetch('https://skillful-creativity-production.up.railway.app/auth/create-first-admin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -124,8 +120,8 @@ export default function AdminLoginPage() {
   const testEndpoint = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://127.0.0.1:8000/auth/create-first-admin', {
-        method: 'GET', // Try GET first
+      const response = await fetch('https://skillful-creativity-production.up.railway.app/auth/create-first-admin', {
+        method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });
       
@@ -234,7 +230,7 @@ export default function AdminLoginPage() {
           </div>
           
           <div className="mt-6 text-center text-xs text-gray-500 space-y-1">
-            <p>Backend API: http://127.0.0.1:8000</p>
+            <p>Backend API: https://skillful-creativity-production.up.railway.app</p>
             <p>Check console (F12) for detailed logs</p>
             <p>Make sure both backend and frontend are running</p>
           </div>
