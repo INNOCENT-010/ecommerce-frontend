@@ -7,7 +7,7 @@ import AuthProvider from './providers/AuthProvider';
 import { CurrencyProvider } from '@/app/context/CurrencyContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import { MobileNavProvider } from './context/MobileNavContext';
-import MobileNav from './components/layout/MobileNav';
+
 
 export default function RootLayout({
   children,
@@ -30,7 +30,7 @@ export default function RootLayout({
                   {children}
                 </main>
                 <Footer />
-                <MobileNav />
+                
               </MobileNavProvider>
             </CartProvider>
           </CurrencyProvider>
