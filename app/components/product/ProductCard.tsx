@@ -16,13 +16,13 @@ import { wishlistApi } from '@/lib/supabase';
 interface ProductCardProps {
   product: Product;
   size?: 'normal' | 'large';
-  minHeight?: '74vh' | '65vh' | string;
+  minHeight?: string;
 }
 
 export default function ProductCard({ 
   product, 
   size = 'normal',
-  minHeight = '65vh'
+  minHeight = 'auto'
 }: ProductCardProps) {
   const { addToCart } = useCart();
   const [adding, setAdding] = useState(false);
@@ -34,51 +34,42 @@ export default function ProductCard({
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [selectedColor, setSelectedColor] = useState<string>('');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
   
-  const minSwipeDistance = 50;
-
   const getProductImages = () => {
-  if (!product.image) return ['https://via.placeholder.com/600x800/cccccc/969696?text=Product+Image'];
-  
-  // Handle all possible cases
-  if (Array.isArray(product.image)) {
-    if (product.image.length === 0) {
-      return ['https://via.placeholder.com/600x800/cccccc/969696?text=Product+Image'];
+    if (!product.image) return ['https://via.placeholder.com/600x800/cccccc/969696?text=Product+Image'];
+    
+    if (Array.isArray(product.image)) {
+      if (product.image.length === 0) {
+        return ['https://via.placeholder.com/600x800/cccccc/969696?text=Product+Image'];
+      }
+      
+      const validImages = product.image
+        .filter(img => {
+          if (typeof img === 'string') {
+            return img && img.trim() !== '';
+          } else if (img && typeof img === 'object' && 'url' in img) {
+            return img.url && img.url.trim() !== '';
+          }
+          return false;
+        })
+        .map(img => {
+          if (typeof img === 'string') {
+            return img;
+          } else if (img && typeof img === 'object' && 'url' in img) {
+            return img.url;
+          }
+          return '';
+        })
+        .filter(url => url && url.trim() !== '');
+      
+      if (validImages.length > 0) {
+        return validImages;
+      }
+    } else if (typeof product.image === 'string' && product.image.trim() !== '') {
+      return [product.image];
     }
     
-    // Process array of images (could be strings or ProductImage objects)
-    const validImages = product.image
-      .filter(img => {
-        if (typeof img === 'string') {
-          return img && img.trim() !== '';
-        } else if (img && typeof img === 'object' && 'url' in img) {
-          // Handle ProductImage object
-          return img.url && img.url.trim() !== '';
-        }
-        return false;
-      })
-      .map(img => {
-        if (typeof img === 'string') {
-          return img;
-        } else if (img && typeof img === 'object' && 'url' in img) {
-          // Return URL from ProductImage object
-          return img.url;
-        }
-        return '';
-      })
-      .filter(url => url && url.trim() !== '');
-    
-    if (validImages.length > 0) {
-      return validImages;
-    }
-  } else if (typeof product.image === 'string' && product.image.trim() !== '') {
-    // Single string image
-    return [product.image];
-  }
-  
-  return ['https://via.placeholder.com/600x800/cccccc/969696?text=Product+Image'];
+    return ['https://via.placeholder.com/600x800/cccccc/969696?text=Product+Image'];
   };
 
   const productImages = getProductImages();
@@ -133,29 +124,6 @@ export default function ProductCard({
       console.error('Error toggling wishlist:', error);
     } finally {
       setWishlistLoading(false);
-    }
-  };
-
-  const onTouchStart = (e: React.TouchEvent) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
-  };
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
-  };
-
-  const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-    
-    if (isLeftSwipe && hasMultipleImages) {
-      nextImage();
-    } else if (isRightSwipe && hasMultipleImages) {
-      prevImage();
     }
   };
 
@@ -255,13 +223,10 @@ export default function ProductCard({
             className="relative overflow-hidden rounded-lg mb-3 bg-gray-100"
             style={{ 
               minHeight: minHeight,
-              height: minHeight
+              height: minHeight === 'auto' ? 'auto' : minHeight
             }}
-            onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
-            onTouchEnd={onTouchEnd}
           >
-            <div className="relative w-full h-full">
+            <div className="relative w-full h-full aspect-[3/4]">
               {productImages.map((img, index) => (
                 <img
                   key={index}
@@ -463,7 +428,7 @@ export default function ProductCard({
           <button
             onClick={handleQuickAddClick}
             disabled={adding}
-            className={`absolute bottom-3 left-1/2 -translate-x-1/2 bg-black text-white px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 z-40 shadow-lg hover:bg-gray-800 disabled:opacity-50 whitespace-nowrap min-w-[120px] text-center ${
+            className={`absolute bottom-3 left-1/2 -translate-x-1/2 bg-black text-white px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-300 z-40 shadow-lg hover:bg-gray-800 disabled:opacity-50 whitespace-nowrap min-w-[140px] text-center min-h-[44px] flex items-center justify-center ${
               isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
             }`}
           >
@@ -482,9 +447,8 @@ export default function ProductCard({
             {product.name}
           </h3>
           
-          {/* Product Description - Always visible initially */}
           {product.description && (
-            <p className="text-xs text-gray-600 mb-2 line-clamp-2">
+            <p className="text-xs text-gray-600 mb-2 line-clamp-2 hidden md:block">
               {product.description}
             </p>
           )}
@@ -506,8 +470,6 @@ export default function ProductCard({
             </>
           )}
         </div>
-        
-        <p className="text-xs text-gray-400 mt-1">Displayed in {currency}</p>
       </div>
     </div>
   );
