@@ -269,7 +269,7 @@ export default function ProductCard({
                                 e.stopPropagation();
                                 setSelectedSize(size);
                               }}
-                              className={`px-3 py-2 text-xs rounded border transition-all ${
+                              className={`px-2 py-1.5 text-xs rounded border transition-all ${
                                 selectedSize === size
                                   ? 'bg-black text-white border-black'
                                   : 'bg-white text-gray-700 border-gray-300 hover:border-gray-500'
@@ -296,14 +296,14 @@ export default function ProductCard({
                                 e.stopPropagation();
                                 setSelectedColor(color);
                               }}
-                              className={`px-3 py-2 text-xs rounded border transition-all flex items-center gap-1 ${
+                              className={`px-2 py-1.5 text-xs rounded border transition-all flex items-center gap-1 ${
                                 selectedColor === color
                                   ? 'bg-gray-100 text-gray-800 border-gray-400'
                                   : 'bg-white text-gray-700 border-gray-300 hover:border-gray-500'
                               }`}
                             >
                               <div 
-                                className="w-3 h-3 rounded-full border border-gray-300"
+                                className="w-2 h-2 rounded-full border border-gray-300"
                                 style={{
                                   backgroundColor: color.toLowerCase() === 'black' ? '#000' :
                                                   color.toLowerCase() === 'white' ? '#fff' :
@@ -314,7 +314,7 @@ export default function ProductCard({
                                                   color.toLowerCase() === 'pink' ? '#f472b6' : '#d1d5db'
                                 }}
                               />
-                              <span className="truncate">{color}</span>
+                              <span className="truncate text-[10px]">{color}</span>
                             </button>
                           ))}
                         </div>
@@ -329,14 +329,14 @@ export default function ProductCard({
                           setShowOptions(false);
                           resetSelection();
                         }}
-                        className="flex-1 px-3 py-2 text-xs border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors"
+                        className="flex-1 px-2 py-1.5 text-xs border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors"
                       >
                         Cancel
                       </button>
                       <button
                         onClick={handleAddToCart}
                         disabled={adding || !canAddToCart()}
-                        className={`flex-1 px-3 py-2 text-xs rounded transition-colors ${
+                        className={`flex-1 px-2 py-1.5 text-xs rounded transition-colors ${
                           adding || !canAddToCart()
                             ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                             : 'bg-black text-white hover:bg-gray-800'
@@ -353,28 +353,28 @@ export default function ProductCard({
                 <>
                   <button
                     onClick={prevImage}
-                    className={`absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-sm text-white transition-all duration-300 hover:bg-black/80 hover:scale-110 z-10 ${
+                    className={`absolute left-1 md:left-2 top-1/2 -translate-y-1/2 w-6 h-6 md:w-8 md:h-8 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-sm text-white transition-all duration-300 hover:bg-black/80 hover:scale-110 z-10 ${
                       isHovered ? 'opacity-100' : 'opacity-0 pointer-events-none'
                     }`}
                     aria-label="Previous image"
                   >
-                    <ChevronLeft size={18} />
+                    <ChevronLeft size={12} className="md:w-[14px] md:h-[14px]" />
                   </button>
                   
                   <button
                     onClick={nextImage}
-                    className={`absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-sm text-white transition-all duration-300 hover:bg-black/80 hover:scale-110 z-10 ${
+                    className={`absolute right-1 md:right-2 top-1/2 -translate-y-1/2 w-6 h-6 md:w-8 md:h-8 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-sm text-white transition-all duration-300 hover:bg-black/80 hover:scale-110 z-10 ${
                       isHovered ? 'opacity-100' : 'opacity-0 pointer-events-none'
                     }`}
                     aria-label="Next image"
                   >
-                    <ChevronRight size={18} />
+                    <ChevronRight size={12} className="md:w-[14px] md:h-[14px]" />
                   </button>
                 </>
               )}
 
               {hasMultipleImages && !showOptions && (
-                <div className={`absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 transition-opacity duration-300 z-10 ${
+                <div className={`absolute bottom-2 md:bottom-4 left-1/2 -translate-x-1/2 flex gap-1 md:gap-2 transition-opacity duration-300 z-10 ${
                   isHovered ? 'opacity-100' : 'opacity-0'
                 }`}>
                   {productImages.map((_, index) => (
@@ -385,7 +385,7 @@ export default function ProductCard({
                         e.stopPropagation();
                         setCurrentImageIndex(index);
                       }}
-                      className={`w-2 h-2 rounded-full transition-all ${
+                      className={`w-[3px] h-[3px] md:w-2 md:h-2 rounded-full transition-all ${
                         index === currentImageIndex 
                           ? 'bg-white scale-125' 
                           : 'bg-white/50 hover:bg-white/80'
@@ -398,13 +398,13 @@ export default function ProductCard({
             </div>
 
             {product.originalPrice && product.originalPrice > product.price && (
-              <div className="absolute top-3 left-3 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full z-20">
+              <div className="absolute top-2 md:top-3 left-2 md:left-3 bg-red-600 text-white text-[10px] md:text-xs font-bold px-1.5 md:px-2 py-0.5 md:py-1 rounded-full z-20">
                 SALE
               </div>
             )}
 
             {product.tags?.includes('new') || product.tags?.includes('newin') ? (
-              <div className="absolute top-3 right-3 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-full z-20">
+              <div className="absolute top-2 md:top-3 right-10 md:right-12 bg-green-600 text-white text-[10px] md:text-xs font-bold px-1.5 md:px-2 py-0.5 md:py-1 rounded-full z-20">
                 NEW
               </div>
             ) : null}
@@ -414,13 +414,13 @@ export default function ProductCard({
         <button
           onClick={handleWishlistToggle}
           disabled={wishlistLoading}
-          className="absolute top-3 right-3 bg-white p-2 rounded-full shadow-lg hover:shadow-xl hover:bg-gray-50 transition-all duration-300 z-10"
+          className="absolute top-2 md:top-3 right-2 md:right-3 bg-white p-1.5 md:p-2 rounded-full shadow-lg hover:shadow-xl hover:bg-gray-50 transition-all duration-300 z-10"
           aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
           title={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
         >
           <Heart 
-            size={16} 
-            className={isWishlisted ? 'fill-red-500 text-red-500' : 'text-gray-700'} 
+            size={12} 
+            className={`md:w-4 md:h-4 ${isWishlisted ? 'fill-red-500 text-red-500' : 'text-gray-700'}`} 
           />
         </button>
 
@@ -428,11 +428,11 @@ export default function ProductCard({
           <button
             onClick={handleQuickAddClick}
             disabled={adding}
-            className={`absolute bottom-3 left-1/2 -translate-x-1/2 bg-black text-white px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-300  shadow-lg hover:bg-gray-800 disabled:opacity-50 whitespace-nowrap min-w-[140px] text-center min-h-[44px] flex items-center justify-center ${
+            className={`absolute bottom-2 md:bottom-3 left-1/2 -translate-x-1/2 bg-black text-white px-3 py-1.5 md:px-4 md:py-2.5 rounded-full text-xs md:text-sm font-medium transition-all duration-300 shadow-lg hover:bg-gray-800 disabled:opacity-50 whitespace-nowrap min-w-[100px] md:min-w-[140px] text-center min-h-[32px] md:min-h-[44px] flex items-center justify-center ${
               isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
             }`}
           >
-            <ShoppingBag size={14} className="inline mr-1.5" />
+            <ShoppingBag size={10} className="inline mr-1 md:mr-1.5 md:w-[12px] md:h-[12px]" />
             {adding ? 'Adding…' : 'Quick Add'}
           </button>
         )}
@@ -443,7 +443,7 @@ export default function ProductCard({
           href={`/products/${product.slug || product.id}`}
           className="block"
         >
-          <h3 className="font-medium text-gray-800 truncate mb-1 group-hover:text-black text-sm md:text-base">
+          <h3 className="font-medium text-gray-800 truncate mb-1 group-hover:text-black text-xs md:text-sm">
             {product.name}
           </h3>
           
@@ -454,17 +454,17 @@ export default function ProductCard({
           )}
         </Link>
         
-        <div className="flex items-center gap-2 flex-wrap">
-          <p className="font-bold text-gray-900 text-base md:text-lg">
+        <div className="flex items-center gap-1 md:gap-2 flex-wrap">
+          <p className="font-bold text-gray-900 text-sm md:text-base">
             {convert(product.price)}
           </p>
           
           {product.originalPrice && product.originalPrice > product.price && (
             <>
-              <p className="text-sm text-gray-500 line-through">
+              <p className="text-xs md:text-sm text-gray-500 line-through">
                 {convert(product.originalPrice)}
               </p>
-              <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded">
+              <span className="text-[10px] md:text-xs font-bold text-red-600 bg-red-50 px-1 md:px-2 py-0.5 rounded">
                 {Math.round((1 - product.price / product.originalPrice) * 100)}% OFF
               </span>
             </>
@@ -474,3 +474,4 @@ export default function ProductCard({
     </div>
   );
 }
+  
