@@ -1,4 +1,3 @@
-// app/components/home/ShopThisMatch.tsx - MOBILE HORIZONTAL, DESKTOP UNCHANGED
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
@@ -32,6 +31,7 @@ function ShopThisMatch() {
   const [rotationCount, setRotationCount] = useState(0);
   const rotationIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [currentMobileIndex, setCurrentMobileIndex] = useState(0);
   
   // Fetch all products from Supabase
   useEffect(() => {
@@ -65,9 +65,9 @@ function ShopThisMatch() {
           // Store all products
           setAllProducts(data);
           
-          // Get initial display products
+          // Get initial display products - more for mobile carousel
           const shuffled = [...data].sort(() => Math.random() - 0.5);
-          const initialProducts = shuffled.slice(0, 12); // More products for horizontal scroll
+          const initialProducts = shuffled.slice(0, 20);
           setDisplayProducts(initialProducts);
         }
         
@@ -118,18 +118,20 @@ function ShopThisMatch() {
     const availableProducts = allProducts.filter(p => !currentIds.includes(p.id));
     
     // If we don't have enough new products, reset with completely new random selection
-    if (availableProducts.length < 12) {
+    if (availableProducts.length < 20) {
       const shuffledAll = [...allProducts].sort(() => Math.random() - 0.5);
-      const newDisplay = shuffledAll.slice(0, 12);
+      const newDisplay = shuffledAll.slice(0, 20);
       setDisplayProducts(newDisplay);
+      setCurrentMobileIndex(0); // Reset mobile index
       return;
     }
     
-    // Shuffle available products and get 12 new ones
+    // Shuffle available products and get new ones
     const shuffledAvailable = [...availableProducts].sort(() => Math.random() - 0.5);
-    const newProducts = shuffledAvailable.slice(0, 12);
+    const newProducts = shuffledAvailable.slice(0, 20);
     
     setDisplayProducts(newProducts);
+    setCurrentMobileIndex(0); // Reset mobile index
   };
   
   // Manually trigger rotation with the "New Picks" button
@@ -138,17 +140,27 @@ function ShopThisMatch() {
     setRotationCount(prev => prev + 1);
   };
   
-  // Horizontal scroll functions for mobile
-  const scrollLeft = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: -300, behavior: 'smooth' });
+  // Mobile navigation
+  const nextMobile = () => {
+    if (currentMobileIndex < Math.ceil(displayProducts.length / 2) - 1) {
+      setCurrentMobileIndex(prev => prev + 1);
+    } else {
+      setCurrentMobileIndex(0);
     }
   };
   
-  const scrollRight = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: 300, behavior: 'smooth' });
+  const prevMobile = () => {
+    if (currentMobileIndex > 0) {
+      setCurrentMobileIndex(prev => prev - 1);
+    } else {
+      setCurrentMobileIndex(Math.ceil(displayProducts.length / 2) - 1);
     }
+  };
+  
+  // Get current 2 products for mobile display
+  const getCurrentMobileProducts = () => {
+    const startIndex = currentMobileIndex * 2;
+    return displayProducts.slice(startIndex, startIndex + 2);
   };
   
   if (loading) {
@@ -208,6 +220,9 @@ function ShopThisMatch() {
     };
   };
   
+  const currentMobileProducts = getCurrentMobileProducts();
+  const mobilePagesCount = Math.ceil(displayProducts.length / 2);
+  
   return (
     <div className="relative">
       {/* New Picks Button - Desktop: Top right, Mobile: Top center */}
@@ -223,42 +238,72 @@ function ShopThisMatch() {
         </button>
       </div>
       
-      {/* MOBILE: Horizontal Scroll Container */}
+      {/* MOBILE: Show 2 products at a time */}
       <div className="md:hidden relative">
-        {/* Horizontal Scroll Arrows */}
+        {/* Mobile Navigation Arrows */}
         <button
-          onClick={scrollLeft}
+          onClick={prevMobile}
           className="absolute left-0 top-1/2 -translate-y-1/2 z-20 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-lg"
-          aria-label="Scroll left"
+          aria-label="Previous"
         >
           <ChevronLeft size={20} />
         </button>
         
         <button
-          onClick={scrollRight}
+          onClick={nextMobile}
           className="absolute right-0 top-1/2 -translate-y-1/2 z-20 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-lg"
-          aria-label="Scroll right"
+          aria-label="Next"
         >
           <ChevronRight size={20} />
         </button>
         
-        {/* Horizontal Scroll Container */}
-        <div 
-          ref={scrollContainerRef}
-          className="flex overflow-x-auto scrollbar-hide gap-4 pb-4 px-2"
-          style={{ scrollBehavior: 'smooth' }}
-        >
-          {displayProducts.map((product) => (
-            <div key={product.id} className="flex-shrink-0 w-[calc(33.333%-8px)]">
-              <div className="h-[60vh]">
+        {/* 2 Products Grid with thin lines */}
+        <div className="grid grid-cols-2 gap-3 px-2">
+          {currentMobileProducts.map((product, index) => (
+            <div key={product.id} className="col-span-1 relative">
+              {/* Ultra thin 0.5px lines */}
+              <div className={`absolute -right-[0.5px] top-1/4 bottom-1/4 w-[0.5px] bg-gray-100 ${index === 0 ? '' : 'hidden'}`}></div>
+              <div className={`absolute -left-[0.5px] top-1/4 bottom-1/4 w-[0.5px] bg-gray-100 ${index === 1 ? '' : 'hidden'}`}></div>
+              <div className="absolute left-1/4 right-1/4 -top-[0.5px] h-[0.5px] bg-gray-100"></div>
+              <div className="absolute left-1/4 right-1/4 -bottom-[0.5px] h-[0.5px] bg-gray-100"></div>
+              
+              {/* Product Card */}
+              <div className="h-[55vh]">
                 <ProductCard 
                   product={convertToProductFormat(product)}
-                  minHeight="60vh"
+                  minHeight="55vh"
                 />
               </div>
             </div>
           ))}
+          
+          {/* Fill empty slots if less than 2 products */}
+          {currentMobileProducts.length < 2 && 
+            Array.from({ length: 2 - currentMobileProducts.length }).map((_, index) => (
+              <div key={`empty-${index}`} className="col-span-1">
+                <div className="h-[55vh] opacity-0 pointer-events-none"></div>
+              </div>
+            ))
+          }
         </div>
+        
+        {/* Mobile Page Indicators */}
+        {mobilePagesCount > 1 && (
+          <div className="flex justify-center mt-4 space-x-1">
+            {Array.from({ length: mobilePagesCount }).map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentMobileIndex(index)}
+                className={`h-1 w-4 rounded-full transition-all duration-300 ${
+                  index === currentMobileIndex 
+                    ? 'bg-black' 
+                    : 'bg-gray-200 hover:bg-gray-300'
+                }`}
+                aria-label={`Go to page ${index + 1}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
       
       {/* DESKTOP: Your Original Grid Layout (NO CHANGES) */}
@@ -335,7 +380,10 @@ function ShopThisMatch() {
       <div className="text-center mt-4 md:mt-6">
         <div className="inline-flex flex-col md:flex-row md:items-center gap-3 md:gap-6">
           <p className="text-gray-500 text-sm">
-            Showing {displayProducts.length} of {totalProducts} products
+            {typeof window !== 'undefined' && window.innerWidth < 768 
+              ? `Showing ${currentMobileProducts.length} of ${displayProducts.length} products`
+              : `Showing ${displayProducts.slice(0, 4).length} of ${displayProducts.length} products`
+            }
           </p>
           <div className="flex items-center justify-center gap-2">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -346,7 +394,7 @@ function ShopThisMatch() {
         {/* Mobile instruction */}
         <div className="mt-2 md:hidden">
           <p className="text-gray-400 text-xs">
-            Swipe horizontally to see more • Tap arrows to navigate
+            Tap arrows to navigate • 2 products per view
           </p>
         </div>
         

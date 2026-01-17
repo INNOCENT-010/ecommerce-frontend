@@ -1,4 +1,3 @@
-// app/components/home/BestSellersGrid.tsx - HORIZONTAL 3 IN A ROW
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
@@ -34,8 +33,8 @@ function BestSellersGrid() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const sliderRef = useRef<HTMLDivElement>(null);
   
-  // MOBILE: 3 products in a row, DESKTOP: 4 products in a row
-  const productsPerSlideMobile = 3;
+  // MOBILE: 2x2 grid (4 products per slide), DESKTOP: 4 products in a row
+  const productsPerSlideMobile = 4; // 2 rows of 2 products
   const productsPerSlideDesktop = 4;
   
   // Fetch ALL bestseller products from Supabase
@@ -185,7 +184,7 @@ function BestSellersGrid() {
   
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 h-[70vh] min-h-[500px]">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 h-[70vh] min-h-[500px]">
         {[...Array(4)].map((_, index) => (
           <div key={index} className="col-span-1">
             <div className="relative h-full bg-gray-100 rounded-lg overflow-hidden animate-pulse">
@@ -251,8 +250,57 @@ function BestSellersGrid() {
       
       {/* Slider Container */}
       <div ref={sliderRef} className="overflow-hidden">
-        {/* HORIZONTAL 3 IN A ROW ON MOBILE, 4 ON DESKTOP */}
-        <div className="grid grid-cols-3 md:grid-cols-4 gap-2 md:gap-6 px-2 md:px-4">
+        {/* MOBILE: 2x2 grid (2 rows of 2 products) */}
+        <div className="md:hidden">
+          <div className="grid grid-cols-2 gap-4 px-2">
+            {currentProducts.map((product, index) => {
+              const productData = convertToProductFormat(product);
+              const isBestseller = product.tags?.some(tag => 
+                tag.toLowerCase().includes('bestseller') ||
+                tag.toLowerCase().includes('bestsellers')
+              );
+              
+              return (
+                <div key={product.id} className="col-span-1 relative group">
+                  {/* Thinner lines - using 0.5px */}
+                  <div className="absolute -right-[1px] top-1/4 bottom-1/4 w-[0.5px] bg-gray-100"></div>
+                  <div className="absolute -left-[1px] top-1/4 bottom-1/4 w-[0.5px] bg-gray-100"></div>
+                  <div className="absolute left-1/4 right-1/4 -top-[1px] h-[0.5px] bg-gray-100"></div>
+                  <div className="absolute left-1/4 right-1/4 -bottom-[1px] h-[0.5px] bg-gray-100"></div>
+                  
+                  {/* Bestseller badge */}
+                  {isBestseller && (
+                    <div className="absolute top-2 left-2 z-20">
+                      <span className="bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm">
+                        BESTSELLER
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Product Card */}
+                  <div className="h-[50vh]">
+                    <ProductCard 
+                      product={productData}
+                      minHeight="50vh"
+                    />
+                  </div>
+                </div>
+              );
+            })}
+            
+            {/* Fill empty slots to maintain 2x2 grid */}
+            {currentProducts.length < 4 && 
+              Array.from({ length: 4 - currentProducts.length }).map((_, index) => (
+                <div key={`empty-${index}`} className="col-span-1">
+                  <div className="h-[50vh] opacity-0 pointer-events-none"></div>
+                </div>
+              ))
+            }
+          </div>
+        </div>
+        
+        {/* DESKTOP: 4 in a row */}
+        <div className="hidden md:grid md:grid-cols-4 gap-6 px-4">
           {currentProducts.map((product) => {
             const productData = convertToProductFormat(product);
             const isBestseller = product.tags?.some(tag => 
@@ -262,38 +310,28 @@ function BestSellersGrid() {
             
             return (
               <div key={product.id} className="col-span-1 relative group">
-                {/* Thin border/separator lines */}
-                <div className="absolute -right-1 top-1/4 bottom-1/4 w-px bg-gray-200 md:hidden"></div>
-                <div className="absolute -left-1 top-1/4 bottom-1/4 w-px bg-gray-200 md:hidden"></div>
+                {/* Thinner border/separator lines for desktop */}
+                <div className="absolute -right-1 top-1/4 bottom-1/4 w-[0.5px] bg-gray-200"></div>
                 
                 {/* Bestseller badge */}
                 {isBestseller && (
-                  <div className="absolute top-2 md:top-3 left-2 md:left-3 z-20">
-                    <span className="bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs font-bold px-2 py-1 md:px-3 md:py-1.5 rounded-full shadow-lg">
+                  <div className="absolute top-3 left-3 z-20">
+                    <span className="bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
                       BESTSELLER
                     </span>
                   </div>
                 )}
                 
-                {/* Product Card with 70vh height */}
-                <div className="h-[70vh] md:h-[65vh]">
+                {/* Product Card */}
+                <div className="h-[65vh]">
                   <ProductCard 
                     product={productData}
-                    minHeight="70vh"
+                    minHeight="65vh"
                   />
                 </div>
               </div>
             );
           })}
-          
-          {/* Fill empty slots */}
-          {currentProducts.length < currentProductsPerSlide && 
-            Array.from({ length: currentProductsPerSlide - currentProducts.length }).map((_, index) => (
-              <div key={`empty-${index}`} className="col-span-1">
-                <div className="h-[70vh] md:h-[65vh] min-h-[400px] opacity-0 pointer-events-none"></div>
-              </div>
-            ))
-          }
         </div>
       </div>
       
@@ -304,10 +342,10 @@ function BestSellersGrid() {
             <button
               key={index}
               onClick={() => setCurrentSlide(index)}
-              className={`h-1.5 md:h-2 rounded-full transition-all duration-300 ${
+              className={`h-1 md:h-2 rounded-full transition-all duration-300 ${
                 index === currentSlide 
-                  ? 'w-6 md:w-8 bg-black' 
-                  : 'w-1.5 md:w-2 bg-gray-300 hover:bg-gray-400'
+                  ? 'w-4 md:w-8 bg-black' 
+                  : 'w-1 md:w-2 bg-gray-200 hover:bg-gray-300'
               }`}
               aria-label={`Go to slide ${index + 1}`}
             />
