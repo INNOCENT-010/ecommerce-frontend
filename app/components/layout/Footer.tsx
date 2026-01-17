@@ -101,7 +101,7 @@ export default function Footer() {
           <div className="flex justify-center gap-4 mt-6">
             <div className="text-xs text-gray-500">We accept:</div>
             <div className="flex gap-2">
-              <span className="text-sm">💳</span>
+              <span className="text-sm"></span>
               <span className="text-sm">Visa</span>
               <span className="text-sm">Mastercard</span>
               <span className="text-sm">PayPal</span>

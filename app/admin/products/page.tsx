@@ -74,7 +74,7 @@ export default function ProductsPage() {
     }
   };
 
-  // Update stock quantity
+  // Update stock quantity in both databases
   const updateStock = async (productId: string, newStock: number) => {
     if (newStock < 0) {
       alert('Stock cannot be negative');
@@ -83,22 +83,54 @@ export default function ProductsPage() {
     
     setUpdatingStock(productId);
     try {
-      const { error } = await supabase
-        .from('products')
-        .update({ stock: newStock, updated_at: new Date().toISOString() })
-        .eq('id', productId);
+      // Call FastAPI backend to update both databases
+      const response = await fetch(`http://localhost:8000/api/products/${productId}/stock`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ stock: newStock }),
+      });
       
-      if (error) throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to update stock');
+      }
       
-      // Update local state
-      setProducts(products.map(product =>
-        product.id === productId ? { ...product, stock: newStock } : product
-      ));
+      const result = await response.json();
       
-      alert('Stock updated successfully');
-    } catch (error) {
+      if (result.success) {
+        // Update local state
+        setProducts(products.map(product =>
+          product.id === productId ? { ...product, stock: newStock } : product
+        ));
+        
+        alert('Stock updated successfully');
+      } else {
+        throw new Error(result.message || 'Failed to update stock');
+      }
+    } catch (error: any) {
       console.error('Error updating stock:', error);
-      alert('Failed to update stock');
+      alert('Failed to update stock: ' + error.message);
+      
+      // Fallback: Try to update just Supabase if FastAPI fails
+      try {
+        const { error: supabaseError } = await supabase
+          .from('products')
+          .update({ stock: newStock, updated_at: new Date().toISOString() })
+          .eq('id', productId);
+        
+        if (supabaseError) throw supabaseError;
+        
+        // Update local state even if FastAPI failed
+        setProducts(products.map(product =>
+          product.id === productId ? { ...product, stock: newStock } : product
+        ));
+        
+        alert('Stock updated in Supabase only. FastAPI update failed.');
+      } catch (fallbackError) {
+        console.error('Fallback update also failed:', fallbackError);
+      }
     } finally {
       setUpdatingStock(null);
     }
