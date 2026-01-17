@@ -2,7 +2,7 @@
 'use client';
 import { IMAGE_CONFIG } from '@/config/images';
 import Link from 'next/link';
-import { Heart, User, Menu, ChevronDown, ArrowRight, ShoppingBag, X } from 'lucide-react';
+import { Heart, User, Menu, ChevronDown, ArrowRight, ShoppingBag, X, Search } from 'lucide-react';
 import SearchBar from '../search/SearchBar';
 import { useState, useRef, useEffect } from 'react';      
 import { useCurrency } from '@/app/context/CurrencyContext';
@@ -10,6 +10,7 @@ import ProfileSidebar from '@/app/components/profile/ProfileSidebar.';
 import CartSidebarContent from '../cart/CartSidebarContent';
 import { useCart } from '@/app/context/CartonContext';
 import { supabase, wishlistApi } from '@/lib/supabase';
+import { useMobileNav } from '@/app/context/MobileNavContext';
 
 // Interface for dropdown images
 interface DropdownImage {
@@ -279,6 +280,9 @@ export default function Header() {
   const { totalItems, totalPrice } = useCart();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout>();
+  const { openNav, isOpen: mobileNavOpen } = useMobileNav();
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const { currency, setCurrency } = useCurrency();
   const [currencyOpen, setCurrencyOpen] = useState(false);
@@ -382,7 +386,7 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
-    if (isCartOpen) {
+    if (isCartOpen || mobileMenuOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -390,26 +394,33 @@ export default function Header() {
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [isCartOpen]);
+  }, [isCartOpen, mobileMenuOpen]);
 
   const activeNavItem = navigation.find(item => item.name === activeDropdown);
   const activeDropdownImage = activeDropdown ? dropdownImages[activeDropdown] : null;
 
   return (
     <>
-      {/* MAIN HEADER WITH HIGH Z-INDEX - REMOVED TOOLS BAR */}
-      <header className="sticky top-0 z-50 bg-[#fceff2] shadow-sm">
-        <div className="container mx-auto px-4 py-4">
+      {/* MAIN HEADER */}
+      <header className="sticky top-0 z-40 bg-[#fceff2] shadow-sm">
+        <div className="container mx-auto px-4 py-3 md:py-4">
           <div className="flex items-center justify-between">
-            <button className="lg:hidden">
+            {/* Mobile Menu Button */}
+            <button 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-2"
+              aria-label="Menu"
+            >
               <Menu size={24} className="text-gray-800" />
             </button>
 
-            <Link href="/" className="text-2xl font-bold tracking-tight">
+            {/* Logo */}
+            <Link href="/" className="text-xl md:text-2xl font-bold tracking-tight">
               <span className="text-gray-900">BLOOM&G</span>
             </Link>
 
-            <nav className="hidden lg:flex items-center space-x-8">
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex items-center space-x-6 xl:space-x-8">
               {navigation.map((item) => (
                 <div
                   key={item.name}
@@ -420,7 +431,6 @@ export default function Header() {
                   <Link
                     href={item.href}
                     onClick={(e) => {
-                      // Force a hard refresh for category pages to reload products
                       e.preventDefault();
                       window.location.href = item.href;
                     }}
@@ -439,13 +449,25 @@ export default function Header() {
             </nav>
 
             {/* Right Icons */}
-            <div className="flex items-center space-x-6">
-              <SearchBar />
+            <div className="flex items-center space-x-4 md:space-x-6">
+              {/* Mobile Search Toggle */}
+              <button 
+                onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
+                className="lg:hidden p-2"
+                aria-label="Search"
+              >
+                <Search size={22} />
+              </button>
 
-              <Link href="/wishlist" className="relative">
-                <Heart size={22} />
+              {/* Desktop Search */}
+              <div className="hidden lg:block">
+                <SearchBar />
+              </div>
+
+              <Link href="/wishlist" className="relative p-1 md:p-2">
+                <Heart size={20} className="md:w-5 md:h-5" />
                 {wishlistCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-black text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                  <span className="absolute -top-1 -right-1 bg-black text-white text-xs w-4 h-4 md:w-5 md:h-5 flex items-center justify-center rounded-full">
                     {wishlistCount > 9 ? '9+' : wishlistCount}
                   </span>
                 )}
@@ -453,18 +475,18 @@ export default function Header() {
 
               <button 
                 onClick={toggleCart}
-                className="relative hover:opacity-80 transition-opacity"
+                className="relative p-1 md:p-2 hover:opacity-80 transition-opacity"
               >
-                <ShoppingBag size={22} className="text-gray-800" />
-                {totalItems > 0 &&(
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {totalItems > 9? '9+': totalItems}
+                <ShoppingBag size={20} className="md:w-5 md:h-5 text-gray-800" />
+                {totalItems > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 md:w-5 md:h-5 flex items-center justify-center">
+                    {totalItems > 9 ? '9+' : totalItems}
                   </span>
                 )}
               </button>
 
-              {/* Enhanced Currency Dropdown */}
-              <div className="relative">
+              {/* Currency Dropdown */}
+              <div className="relative hidden sm:block">
                 <button
                   onClick={() => setCurrencyOpen(!currencyOpen)}
                   className="text-sm font-medium flex items-center gap-1 px-2 py-1 hover:bg-gray-100 rounded"
@@ -495,34 +517,40 @@ export default function Header() {
 
               <button 
                 onClick={() => setIsProfileOpen(true)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                className="p-1 md:p-2 hover:bg-gray-100 rounded-full transition-colors"
               >
-                <User size={22} />
+                <User size={20} className="md:w-5 md:h-5" />
               </button>
             </div>
           </div>
 
-          {/* === DROPDOWN MENU - FIXED POSITIONING WITH HIGH Z-INDEX === */}
+          {/* Mobile Search Bar */}
+          {mobileSearchOpen && (
+            <div className="lg:hidden mt-4 animate-in slide-in-from-top duration-200">
+              <SearchBar />
+            </div>
+          )}
+
+          {/* === DROPDOWN MENU - DESKTOP ONLY === */}
           {activeNavItem?.dropdown && (
             <div
               ref={dropdownRef}
-              className="absolute left-0 right-0 bg-white shadow-2xl border-t border-gray-100 z-[9999]"
+              className="absolute left-0 right-0 bg-white shadow-2xl border-t border-gray-100 z-50 hidden lg:block"
               onMouseEnter={handleMouseEnterDropdown}
               onMouseLeave={handleMouseLeaveDropdown}
               style={{ 
                 top: '100%',
-                // Using absolute positioning but with very high z-index
               }}
             >
-              <div className="container mx-auto px-4 py-8">
-                <div className="flex gap-12">
-                  <div className="flex-1 grid grid-cols-3 gap-8">
+              <div className="container mx-auto px-4 py-6 md:py-8">
+                <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
+                  <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                     {activeNavItem.dropdown.leftContent.map((section, idx) => (
                       <div key={idx}>
-                        <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">
+                        <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 md:mb-4">
                           {section.category}
                         </h4>
-                        <ul className="space-y-3">
+                        <ul className="space-y-2 md:space-y-3">
                           {section.items.map((item, itemIdx) => (
                             <li key={itemIdx}>
                               <Link
@@ -542,10 +570,9 @@ export default function Header() {
                     ))}
                   </div>
 
-                  {/* Right Image Section with Supabase Integration */}
-                  <div className="w-96 relative">
-                    <div className="relative rounded-lg overflow-hidden mb-4 h-80">
-                      {/* Use Supabase image if available, otherwise fallback */}
+                  {/* Right Image Section */}
+                  <div className="lg:w-96 relative">
+                    <div className="relative rounded-lg overflow-hidden mb-4 h-64 md:h-80">
                       {loadingImages ? (
                         <div className="w-full h-full bg-gray-200 animate-pulse rounded-lg" />
                       ) : activeDropdownImage ? (
@@ -604,6 +631,106 @@ export default function Header() {
           )}
         </div>
 
+        {/* Mobile Navigation Menu */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden fixed inset-0 z-50">
+            {/* Backdrop */}
+            <div 
+              className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            
+            {/* Menu Panel */}
+            <div className="absolute left-0 top-0 bottom-0 w-80 max-w-[85vw] bg-white shadow-2xl animate-in slide-in-from-left duration-300">
+              <div className="h-full flex flex-col">
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 border-b">
+                  <span className="text-lg font-bold">Menu</span>
+                  <button
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="p-2 hover:bg-gray-100 rounded-full"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+
+                {/* Navigation Items */}
+                <div className="flex-1 overflow-y-auto py-4">
+                  <div className="space-y-1 px-4">
+                    {navigation.map((item) => (
+                      <div key={item.name}>
+                        <Link
+                          href={item.href}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            window.location.href = item.href;
+                            setMobileMenuOpen(false);
+                          }}
+                          className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50"
+                        >
+                          <span className="font-medium">{item.name}</span>
+                          {item.dropdown && <ChevronDown size={16} />}
+                        </Link>
+                        
+                        {/* Mobile Dropdown */}
+                        {item.dropdown && (
+                          <div className="pl-4 border-l ml-4">
+                            {item.dropdown.leftContent.slice(0, 1).map((section, idx) => (
+                              <div key={idx} className="space-y-2 py-2">
+                                {section.items.slice(0, 5).map((subItem, subIdx) => (
+                                  <Link
+                                    key={subIdx}
+                                    href={subItem.href}
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      window.location.href = subItem.href;
+                                      setMobileMenuOpen(false);
+                                    }}
+                                    className="block p-2 text-sm text-gray-600 hover:text-black"
+                                  >
+                                    {subItem.name}
+                                  </Link>
+                                ))}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Bottom Actions */}
+                <div className="border-t p-4">
+                  <div className="space-y-2">
+                    <Link
+                      href="/account"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center p-3 rounded-lg hover:bg-gray-50"
+                    >
+                      <User size={20} className="mr-3" />
+                      <span>Account</span>
+                    </Link>
+                    <Link
+                      href="/wishlist"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center p-3 rounded-lg hover:bg-gray-50"
+                    >
+                      <Heart size={20} className="mr-3" />
+                      <span>Wishlist</span>
+                      {wishlistCount > 0 && (
+                        <span className="ml-auto bg-black text-white text-xs px-2 py-1 rounded-full">
+                          {wishlistCount}
+                        </span>
+                      )}
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <ProfileSidebar 
           isOpen={isProfileOpen} 
           onClose={() => setIsProfileOpen(false)} 
@@ -617,14 +744,14 @@ export default function Header() {
             className="fixed inset-0 z-[9998]"
             onClick={toggleCart}
           >
-            <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" style={{ width: '60%' }} />
-            <div className="absolute right-0 inset-y-0" style={{ width: '40%' }} />
+            <div className="absolute inset-0 bg-black/20 backdrop-blur-sm lg:block" style={{ width: '60%' }} />
+            <div className="absolute right-0 inset-y-0 lg:block" style={{ width: '40%' }} />
           </div>
 
-          <div className="fixed right-0 top-0 h-full w-[40%] bg-white shadow-2xl z-[9999] overflow-y-auto">
+          <div className="fixed right-0 top-0 h-full w-full lg:w-[40%] bg-white shadow-2xl z-[9999] overflow-y-auto">
             <div className="h-full flex flex-col">
-              <div className="flex items-center justify-between p-6 border-b">
-                <h2 className="text-2xl font-bold">Your Cart</h2>
+              <div className="flex items-center justify-between p-4 lg:p-6 border-b">
+                <h2 className="text-xl lg:text-2xl font-bold">Your Cart</h2>
                 <button
                   onClick={toggleCart}
                   className="p-2 hover:bg-gray-100 rounded-full"
@@ -634,10 +761,10 @@ export default function Header() {
               </div>
 
               {/* Cart Content */}
-              <div className="flex-1 p-6 overflow-y-auto">
+              <div className="flex-1 p-4 lg:p-6 overflow-y-auto">
                 {totalItems === 0 ? (
                   <div className="text-center py-12">
-                    <ShoppingBag size={64} className="mx-auto text-gray-300 mb-4" />
+                    <ShoppingBag size={48} className="mx-auto text-gray-300 mb-4" />
                     <p className="text-gray-600 mb-4">Your cart is empty</p>
                     <button
                       onClick={toggleCart}
@@ -652,7 +779,7 @@ export default function Header() {
               </div>
 
               {totalItems > 0 && (
-                <div className="border-t p-6">
+                <div className="border-t p-4 lg:p-6">
                   <div className="space-y-3 mb-6">
                     <div className="flex justify-between">
                       <span>Subtotal</span>

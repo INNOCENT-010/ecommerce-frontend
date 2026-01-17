@@ -6,6 +6,8 @@ import { CartProvider } from './context/CartonContext';
 import AuthProvider from './providers/AuthProvider';
 import { CurrencyProvider } from '@/app/context/CurrencyContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import { MobileNavProvider } from './context/MobileNavContext';
+import MobileNav from './components/layout/MobileNav';
 
 export default function RootLayout({
   children,
@@ -14,15 +16,22 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="flex flex-col min-h-screen bg-[#FAF7F5] text-gray-900"> {/* Sublime cream background */}
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+        <meta name="theme-color" content="#FAF7F5" />
+      </head>
+      <body className="flex flex-col min-h-screen bg-[#FAF7F5] text-gray-900">
         <AuthProvider>
           <CurrencyProvider>
             <CartProvider>
-              <Header />
-              <main className="flex-grow">
-                {children}
-              </main>
-              <Footer />
+              <MobileNavProvider>
+                <Header />
+                <main className="flex-grow pb-16 md:pb-0">
+                  {children}
+                </main>
+                <Footer />
+                <MobileNav />
+              </MobileNavProvider>
             </CartProvider>
           </CurrencyProvider>
         </AuthProvider>
