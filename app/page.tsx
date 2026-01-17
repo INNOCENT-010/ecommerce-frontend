@@ -1,3 +1,4 @@
+// app/page.tsx - COMPLETE UPDATED VERSION
 'use client';
 
 import Link from 'next/link';
@@ -14,7 +15,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   
-  // Categories data - MOBILE RESPONSIVE (5 columns → 2 columns on mobile)
+  // Categories data - MOBILE: 2 columns with last one full width, Desktop: 5 columns
   const categories = [
     { 
       name: 'New In', 
@@ -91,7 +92,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#FAF7F5]" onClick={handleUserInteraction}>
       {/* ===== HERO VIDEO SECTION ===== */}
-      <section className="relative h-[90vh] overflow-hidden">
+      <section className="relative h-[60vh] md:h-[90vh] overflow-hidden">
         <div className="absolute inset-0">
           <video
             ref={videoRef}
@@ -126,28 +127,26 @@ export default function Home() {
           </div>
         )}
         
-        <div className="relative z-30 container mx-auto px-4 h-full flex flex-col justify-end pb-20">
+        <div className="relative z-30 container mx-auto px-4 h-full flex flex-col justify-end pb-12 md:pb-20">
           <div className="max-w-2xl">
-            {/* FEATURE 1: KEEP ORIGINAL FONTS */}
-            <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
+            <h1 className="text-3xl md:text-5xl lg:text-7xl font-bold text-white mb-4 md:mb-6 leading-tight">
               Dress to <span className="italic">Impress</span>
             </h1>
-            <p className="text-xl text-white/90 mb-8 max-w-xl">
+            <p className="text-base md:text-xl text-white/90 mb-6 md:mb-8 max-w-xl">
               Where luxury meets elegance. Discover gowns that make every moment unforgettable.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              {/* GOLD BUTTONS */}
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
               <Link 
                 href="/products?category=dresses&tag=gowns"
-                className="bg-gradient-to-r from-[#D4AF37] to-[#F4D03F] text-[#5D2B42] px-10 py-4 font-bold tracking-wider hover:shadow-xl transition-all text-sm uppercase inline-flex items-center justify-center rounded"
+                className="bg-gradient-to-r from-[#D4AF37] to-[#F4D03F] text-[#5D2B42] px-6 md:px-10 py-3 md:py-4 font-bold tracking-wider hover:shadow-xl transition-all text-xs md:text-sm uppercase inline-flex items-center justify-center rounded"
               >
                 Explore Gowns
-                <ArrowRight className="ml-2" size={18} />
+                <ArrowRight className="ml-2" size={16} />
               </Link>
               
               <Link 
                 href="/products?category=Newin"
-                className="bg-transparent border-2 border-white text-white px-10 py-4 font-bold tracking-wider hover:bg-white/10 transition-all text-sm uppercase inline-flex items-center justify-center rounded"
+                className="bg-transparent border-2 border-white text-white px-6 md:px-10 py-3 md:py-4 font-bold tracking-wider hover:bg-white/10 transition-all text-xs md:text-sm uppercase inline-flex items-center justify-center rounded"
               >
                 Shop New Arrivals
               </Link>
@@ -159,39 +158,50 @@ export default function Home() {
       {/* ===== THIN DIVIDER LINE ===== */}
       <div className="w-full border-t border-[#E8D5D3]"></div>
 
-      {/* ===== CATEGORIES SECTION - MOBILE RESPONSIVE ===== */}
-      <section className="w-full">
-        <div className="w-full px-0">
-          {/* Mobile: 2 columns, Desktop: 5 columns */}
-          <div className="grid grid-cols-2 md:grid-cols-5 h-[50vh] md:h-[85vh] min-h-[400px] md:min-h-[600px]">
-            {categories.map((category, index) => (
-              <div key={category.name} className={`relative ${index < categories.length - 1 ? 'border-r border-[#E8D5D3]' : ''}`}>
-                <Link 
-                  href={category.href}
-                  className="group relative overflow-hidden hover:z-10 block h-full"
+      {/* ===== CATEGORIES SECTION - MOBILE: 2 columns with last one full width ===== */}
+      <section className="w-full py-6 md:py-0">
+        <div className="w-full px-4 md:px-0">
+          {/* Mobile: 2 columns with custom handling for odd number, Desktop: Your original 5 columns */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-0 h-auto md:h-[85vh] min-h-[50vh] md:min-h-[600px]">
+            {categories.map((category, index) => {
+              // On mobile, if it's the last category (5th one), make it full width
+              const isLastCategory = index === categories.length - 1;
+              const mobileColSpan = isLastCategory ? 'col-span-2' : 'col-span-1';
+              
+              return (
+                <div 
+                  key={category.name} 
+                  className={`relative ${mobileColSpan} md:col-span-1 ${
+                    index < categories.length - 1 ? 'md:border-r border-[#E8D5D3]' : ''
+                  }`}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent z-10"></div>
-                  <img 
-                    src={category.image}
-                    alt={category.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                    onError={(e) => {
-                      e.currentTarget.src = 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800&h=600&fit=crop';
-                    }}
-                  />
-                  <div className="absolute bottom-0 left-0 right-0 p-4 md:p-10 text-white z-20">
-                    <div className="inline-block bg-black/80 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg">
-                      <h3 className="text-lg md:text-2xl font-serif font-light tracking-widest">{category.name}</h3>
+                  <Link 
+                    href={category.href}
+                    className="group relative overflow-hidden hover:z-10 block h-[40vh] md:h-full w-full"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent z-10"></div>
+                    <img 
+                      src={category.image}
+                      alt={category.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      onError={(e) => {
+                        e.currentTarget.src = 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800&h=600&fit=crop';
+                      }}
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 p-4 md:p-10 text-white z-20">
+                      <div className="inline-block bg-black/80 text-white px-3 py-2 md:px-6 md:py-3 rounded-lg">
+                        <h3 className="text-base md:text-2xl font-serif font-light tracking-widest">{category.name}</h3>
+                      </div>
                     </div>
-                  </div>
-                  {/* FEATURE 2: KEEP LIKE/WISHLIST BUTTONS DESIGN */}
-                  <div className="bg-gradient-to-r from-[#D4AF37] to-[#F4D03F] text-[#5D2B42] absolute top-4 md:top-8 right-4 md:right-8 px-3 py-2 md:px-5 md:py-3 rounded-full text-sm md:text-base font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 shadow-lg">
-                    SHOP NOW
-                  </div>
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors duration-300 z-10"></div>
-                </Link>
-              </div>
-            ))}
+                    {/* SHOP NOW button */}
+                    <div className="bg-gradient-to-r from-[#D4AF37] to-[#F4D03F] text-[#5D2B42] absolute top-4 right-4 px-3 py-1.5 md:px-5 md:py-3 rounded-full text-xs md:text-base font-bold md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 z-20 shadow-lg">
+                      SHOP NOW
+                    </div>
+                    <div className="absolute inset-0 bg-black/0 md:group-hover:bg-black/15 transition-colors duration-300 z-10"></div>
+                  </Link>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -200,8 +210,14 @@ export default function Home() {
       <div className="w-full border-t border-[#E8D5D3]"></div>
 
       {/* ===== BEST SELLERS SECTION ===== */}
-      <section className="w-full py-0">
-        <div className="w-full px-0 relative">
+      <section className="w-full py-8 md:py-0">
+        <div className="w-full px-4 md:px-0 relative">
+          {/* Mobile: Add section header */}
+          <div className="md:hidden text-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Bestsellers</h2>
+            <p className="text-gray-600 text-sm">Our most loved pieces</p>
+          </div>
+          
           {/* Best Sellers Grid Component */}
           <BestSellersGrid />
         </div>
@@ -211,7 +227,7 @@ export default function Home() {
       <div className="w-full border-t border-[#E8D5D3]"></div>
 
       {/* ===== SWIM BANNER ===== */}
-      <section className="relative h-[50vh] md:h-[70vh] overflow-hidden bg-[#FAF7F5] mt-6 md:mt-12">
+      <section className="relative h-[40vh] md:h-[70vh] overflow-hidden bg-[#FAF7F5] mt-8 md:mt-12">
         <div className="absolute inset-0">
           <img
             src={HOMEPAGE_MEDIA.BANNERS.SWIM}
@@ -249,8 +265,14 @@ export default function Home() {
       <div className="w-full border-t border-[#E8D5D3]"></div>
 
       {/* ===== SHOP THIS MATCH SECTION ===== */}
-      <section className="w-full py-0">
-        <div className="w-full px-0 relative">
+      <section className="w-full py-8 md:py-0">
+        <div className="w-full px-4 md:px-0 relative">
+          {/* Mobile: Add section header */}
+          <div className="md:hidden text-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Shop This Match</h2>
+            <p className="text-gray-600 text-sm">Curated selections just for you</p>
+          </div>
+          
           {/* No Section Header - Just the grid */}
           <ShopThisMatch />
         </div>
@@ -260,10 +282,10 @@ export default function Home() {
       <div className="w-full border-t border-[#E8D5D3]"></div>
 
       {/* ===== SPACE BETWEEN SHOP THIS MATCH AND PRE-ORDER ===== */}
-      <div className="h-10 md:h-20 bg-[#FAF7F5]"></div>
+      <div className="h-8 md:h-20 bg-[#FAF7F5]"></div>
 
       {/* ===== PRE-ORDER BANNER ===== */}
-      <section className="relative h-[50vh] md:h-[70vh] overflow-hidden bg-[#FAF7F5]">
+      <section className="relative h-[40vh] md:h-[70vh] overflow-hidden bg-[#FAF7F5]">
         <div className="absolute inset-0">
           <img
             src={HOMEPAGE_MEDIA.BANNERS.PREORDER}
@@ -299,13 +321,13 @@ export default function Home() {
       </section>
 
       {/* ===== SPACE BEFORE NEWSLETTER ===== */}
-      <div className="h-10 md:h-20 bg-[#FAF7F5]"></div>
+      <div className="h-8 md:h-20 bg-[#FAF7F5]"></div>
 
       {/* FEATURE 3: NEWSLETTER SECTION WITH ORIGINAL DESIGN */}
-      <section className="py-12 md:py-16 border-t border-[#E8D5D3] bg-white">
+      <section className="py-8 md:py-16 border-t border-[#E8D5D3] bg-white">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4 text-gray-900">Join The BLOOM&G Club</h2>
-          <p className="text-gray-600 mb-8 max-w-md mx-auto">
+          <h2 className="text-2xl md:text-3xl font-bold mb-3 md:mb-4 text-gray-900">Join The BLOOM&G Club</h2>
+          <p className="text-gray-600 mb-6 md:mb-8 text-sm md:text-base max-w-md mx-auto">
             Get exclusive access to new collections, VIP sales, and style inspiration.
           </p>
           <form className="max-w-md mx-auto">
