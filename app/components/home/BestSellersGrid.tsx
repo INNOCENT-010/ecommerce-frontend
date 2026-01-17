@@ -1,4 +1,4 @@
-// app/components/home/BestSellersGrid.tsx - MOBILE OPTIMIZED
+// app/components/home/BestSellersGrid.tsx - HORIZONTAL 3 IN A ROW
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
@@ -34,7 +34,7 @@ function BestSellersGrid() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const sliderRef = useRef<HTMLDivElement>(null);
   
-  // MOBILE: 3 products per slide, DESKTOP: 4 products per slide (your original)
+  // MOBILE: 3 products in a row, DESKTOP: 4 products in a row
   const productsPerSlideMobile = 3;
   const productsPerSlideDesktop = 4;
   
@@ -44,7 +44,6 @@ function BestSellersGrid() {
       try {
         setLoading(true);
         
-        // Fetch ALL products with bestseller tags
         const { data, error } = await supabase
           .from('products')
           .select(`
@@ -72,7 +71,6 @@ function BestSellersGrid() {
       }
     };
     
-    // Alternative: Fetch all products and filter client-side
     const fetchBestSellersAlternative = async () => {
       try {
         const { data, error } = await supabase
@@ -82,12 +80,11 @@ function BestSellersGrid() {
             product_images(*)
           `)
           .order('created_at', { ascending: false })
-          .limit(50); // Increase limit to get enough products
+          .limit(50);
         
         if (error) return;
         
         if (data) {
-          // Filter for bestsellers or featured products
           const potentialBestsellers = data.filter(product => {
             if (!product.tags || !Array.isArray(product.tags)) return false;
             
@@ -99,26 +96,19 @@ function BestSellersGrid() {
                    (product.featured === true);
           });
           
-          // If we have enough bestsellers, use them
           if (potentialBestsellers.length >= 8) {
             setProducts(potentialBestsellers);
-          } 
-          // If we have some bestsellers but not enough, supplement with regular products
-          else if (potentialBestsellers.length > 0) {
+          } else if (potentialBestsellers.length > 0) {
             const additionalProducts = data
               .filter(p => !potentialBestsellers.some(bp => bp.id === p.id))
               .slice(0, 12 - potentialBestsellers.length);
             setProducts([...potentialBestsellers, ...additionalProducts]);
-          }
-          // No bestsellers found, use featured or newest products
-          else {
-            // First try featured
+          } else {
             const featuredProducts = data.filter(p => p.featured === true);
             if (featuredProducts.length >= 8) {
               setProducts(featuredProducts);
             } else {
-              // Fallback to newest products
-              setProducts(data.slice(0, 16)); // Get enough for multiple slides
+              setProducts(data.slice(0, 16));
             }
           }
         }
@@ -131,37 +121,12 @@ function BestSellersGrid() {
     fetchBestSellers();
   }, []);
   
-  // Calculate slides count - DIFFERENT FOR MOBILE & DESKTOP
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-  const productsPerSlide = isMobile ? productsPerSlideMobile : productsPerSlideDesktop;
-  const slidesCount = Math.max(1, Math.ceil(products.length / productsPerSlide));
-  
-  // Navigation functions
-  const nextSlide = () => {
-    if (currentSlide < slidesCount - 1) {
-      setCurrentSlide(prev => prev + 1);
-    } else {
-      // Loop back to first slide
-      setCurrentSlide(0);
-    }
-  };
-  
-  const prevSlide = () => {
-    if (currentSlide > 0) {
-      setCurrentSlide(prev => prev - 1);
-    } else {
-      // Loop to last slide
-      setCurrentSlide(slidesCount - 1);
-    }
-  };
-  
   // Convert Supabase product to Product format
   const convertToProductFormat = (product: BestSellerProduct): Product => {
     const sortedImages = product.product_images
       ? [...product.product_images].sort((a, b) => (a.order_index || 0) - (b.order_index || 0))
       : [];
     
-    // Get the first image URL or use a placeholder
     const firstImageUrl = sortedImages.length > 0 
       ? sortedImages[0].url 
       : '/placeholder-product.jpg';
@@ -185,13 +150,37 @@ function BestSellersGrid() {
       tags: product.tags || []
     };
   };
- 
+  
   // Get products for current slide
   const getCurrentSlideProducts = () => {
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
     const productsPerSlide = isMobile ? productsPerSlideMobile : productsPerSlideDesktop;
     const startIndex = currentSlide * productsPerSlide;
     const endIndex = startIndex + productsPerSlide;
     return products.slice(startIndex, endIndex);
+  };
+  
+  const nextSlide = () => {
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    const productsPerSlide = isMobile ? productsPerSlideMobile : productsPerSlideDesktop;
+    const slidesCount = Math.max(1, Math.ceil(products.length / productsPerSlide));
+    
+    if (currentSlide < slidesCount - 1) {
+      setCurrentSlide(prev => prev + 1);
+    } else {
+      setCurrentSlide(0);
+    }
+  };
+  
+  const prevSlide = () => {
+    if (currentSlide > 0) {
+      setCurrentSlide(prev => prev - 1);
+    } else {
+      const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+      const productsPerSlide = isMobile ? productsPerSlideMobile : productsPerSlideDesktop;
+      const slidesCount = Math.max(1, Math.ceil(products.length / productsPerSlide));
+      setCurrentSlide(slidesCount - 1);
+    }
   };
   
   if (loading) {
@@ -218,9 +207,7 @@ function BestSellersGrid() {
       <div className="text-center py-12">
         <div className="mb-6">
           <h3 className="text-xl font-semibold text-gray-800 mb-2">No Bestsellers Found</h3>
-          <p className="text-gray-600 mb-6">
-            Add "bestseller" or "featured" tags to your products.
-          </p>
+          <p className="text-gray-600 mb-6">Add "bestseller" or "featured" tags to your products.</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
@@ -235,11 +222,13 @@ function BestSellersGrid() {
   }
   
   const currentProducts = getCurrentSlideProducts();
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
   const currentProductsPerSlide = isMobile ? productsPerSlideMobile : productsPerSlideDesktop;
+  const slidesCount = Math.max(1, Math.ceil(products.length / currentProductsPerSlide));
   
   return (
     <div className="relative">
-      {/* Navigation Arrows - MOBILE: Smaller, DESKTOP: Your original */}
+      {/* Navigation Arrows */}
       <button
         onClick={prevSlide}
         className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 md:-translate-x-6 p-2 md:p-4 bg-black/0 hover:bg-black/5 rounded-full transition-all duration-300 z-30 group"
@@ -261,12 +250,9 @@ function BestSellersGrid() {
       </button>
       
       {/* Slider Container */}
-      <div 
-        ref={sliderRef}
-        className="overflow-hidden"
-      >
-        {/* MOBILE: 3 columns, DESKTOP: 4 columns (your original) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 px-2 md:px-4">
+      <div ref={sliderRef} className="overflow-hidden">
+        {/* HORIZONTAL 3 IN A ROW ON MOBILE, 4 ON DESKTOP */}
+        <div className="grid grid-cols-3 md:grid-cols-4 gap-2 md:gap-6 px-2 md:px-4">
           {currentProducts.map((product) => {
             const productData = convertToProductFormat(product);
             const isBestseller = product.tags?.some(tag => 
@@ -275,8 +261,12 @@ function BestSellersGrid() {
             );
             
             return (
-              <div key={product.id} className="col-span-1 relative">
-                {/* Bestseller badge - MOBILE: Smaller, DESKTOP: Your original */}
+              <div key={product.id} className="col-span-1 relative group">
+                {/* Thin border/separator lines */}
+                <div className="absolute -right-1 top-1/4 bottom-1/4 w-px bg-gray-200 md:hidden"></div>
+                <div className="absolute -left-1 top-1/4 bottom-1/4 w-px bg-gray-200 md:hidden"></div>
+                
+                {/* Bestseller badge */}
                 {isBestseller && (
                   <div className="absolute top-2 md:top-3 left-2 md:left-3 z-20">
                     <span className="bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs font-bold px-2 py-1 md:px-3 md:py-1.5 rounded-full shadow-lg">
@@ -285,7 +275,7 @@ function BestSellersGrid() {
                   </div>
                 )}
                 
-                {/* Product Card with 70vh height on mobile */}
+                {/* Product Card with 70vh height */}
                 <div className="h-[70vh] md:h-[65vh]">
                   <ProductCard 
                     product={productData}
@@ -296,13 +286,10 @@ function BestSellersGrid() {
             );
           })}
           
-          {/* Fill empty slots if needed */}
+          {/* Fill empty slots */}
           {currentProducts.length < currentProductsPerSlide && 
             Array.from({ length: currentProductsPerSlide - currentProducts.length }).map((_, index) => (
-              <div 
-                key={`empty-${index}`} 
-                className="col-span-1"
-              >
+              <div key={`empty-${index}`} className="col-span-1">
                 <div className="h-[70vh] md:h-[65vh] min-h-[400px] opacity-0 pointer-events-none"></div>
               </div>
             ))
@@ -310,7 +297,7 @@ function BestSellersGrid() {
         </div>
       </div>
       
-      {/* Slide Indicators - MOBILE: Smaller spacing */}
+      {/* Slide Indicators */}
       {slidesCount > 1 && (
         <div className="flex justify-center mt-4 md:mt-8 space-x-1 md:space-x-2">
           {Array.from({ length: slidesCount }).map((_, index) => (
@@ -328,7 +315,7 @@ function BestSellersGrid() {
         </div>
       )}
       
-      {/* Products Count & Current Slide - MOBILE: Smaller text */}
+      {/* Products Count */}
       {products.length > 0 && (
         <div className="text-center mt-3 md:mt-4 text-xs md:text-sm text-gray-600">
           Showing {currentProducts.length} of {products.length} bestsellers
@@ -336,7 +323,7 @@ function BestSellersGrid() {
         </div>
       )}
       
-      {/* View All Link - MOBILE: Smaller button */}
+      {/* View All Link */}
       <div className="text-center mt-6 md:mt-8">
         <Link
           href="/products"
