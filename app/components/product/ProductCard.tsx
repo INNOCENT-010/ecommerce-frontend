@@ -1,3 +1,4 @@
+// /ProductCard.tsx
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -373,28 +374,7 @@ export default function ProductCard({
                 </>
               )}
 
-              {hasMultipleImages && !showOptions && (
-                <div className={`absolute bottom-2 md:bottom-4 left-1/2 -translate-x-1/2 flex gap-1 md:gap-2 transition-opacity duration-300 z-10 ${
-                  isHovered ? 'opacity-100' : 'opacity-0'
-                }`}>
-                  {productImages.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setCurrentImageIndex(index);
-                      }}
-                      className={`w-[2px] h-[2px] md:w-2 md:h-2 rounded-full transition-all ${
-                        index === currentImageIndex 
-                          ? 'bg-white scale-150' 
-                          : 'bg-white/50 hover:bg-white/80'
-                      }`}
-                      aria-label={`Go to image ${index + 1}`}
-                    />
-                  ))}
-                </div>
-              )}
+              
             </div>
 
             {product.originalPrice && product.originalPrice > product.price && (
