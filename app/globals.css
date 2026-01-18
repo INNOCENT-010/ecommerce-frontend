@@ -20,25 +20,48 @@
   .safe-right {
     padding-right: env(safe-area-inset-right);
   }
-  /* Force small dots for all carousel indicators */
-.carousel-dot, .image-dot, .slide-indicator, .page-indicator {
-  width: 2px !important;
-  height: 2px !important;
-  min-width: 2px !important;
-  min-height: 2px !important;
+  /* ========== FORCE TINY DOTS FOR ALL INDICATORS ========== */
+/* Target ALL rounded-full elements used as indicators */
+[class*="rounded-full"]:has(> :empty),
+button[class*="rounded-full"]:not(:has(> *)),
+[class*="rounded-full"]:not(:has(*)) {
+  width: 3px !important;
+  height: 3px !important;
+  min-width: 3px !important;
+  min-height: 3px !important;
+}
+
+/* Product card image dots */
+.product-card button[class*="rounded-full"] {
+  width: 3px !important;
+  height: 3px !important;
+}
+
+/* Carousel/slider dots */
+.slider-dot, .carousel-dot, .swiper-pagination-bullet {
+  width: 3px !important;
+  height: 3px !important;
+}
+
+/* Active dots slightly larger but still small */
+[class*="rounded-full"][class*="bg-"]:has(> :empty).active,
+button[class*="rounded-full"].active {
+  width: 4px !important;
+  height: 4px !important;
 }
 
 @media (min-width: 768px) {
-  .carousel-dot, .image-dot, .slide-indicator, .page-indicator {
+  [class*="rounded-full"]:has(> :empty),
+  button[class*="rounded-full"]:not(:has(> *)) {
     width: 6px !important;
     height: 6px !important;
   }
-}
-
-/* Target any button that's used as a dot */
-button[class*="rounded-full"]:has(> :only-child:empty) {
-  width: 2px !important;
-  height: 2px !important;
+  
+  [class*="rounded-full"][class*="bg-"]:has(> :empty).active,
+  button[class*="rounded-full"].active {
+    width: 8px !important;
+    height: 8px !important;
+  }
 }
   /* Hide scrollbar but keep functionality */
   .no-scrollbar::-webkit-scrollbar {

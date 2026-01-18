@@ -27,12 +27,15 @@ export default function ProductDetailPage() {
   const [selectedColor, setSelectedColor] = useState<string | undefined>();
   const [quantity, setQuantity] = useState(1);
   
-  // SINGLE IMAGE SWIPE - Cleaner approach
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  // SMOOTH SWIPE - Keep 2 images but swipe as single gallery
+  const [currentPairIndex, setCurrentPairIndex] = useState(0);
   const [isSwiping, setIsSwiping] = useState(false);
-  const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStartX, setDragStartX] = useState(0);
 
   const galleryRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const requiresSize = product?.sizes && product.sizes.length > 0;
   const requiresColor = product?.colors && product.colors.length > 0;
@@ -42,15 +45,12 @@ export default function ProductDetailPage() {
     if (!product) return [];
     
     if (Array.isArray(product.image)) {
-      // If it's already an array of ProductImage objects
       if (product.image.length > 0 && typeof product.image[0] === 'object') {
         return product.image as ProductImage[];
       }
-      // If it's an array of strings
       return (product.image as string[]).map(url => ({ url, alt: product.name }));
     }
     
-    // If it's a single string
     if (typeof product.image === 'string') {
       return [{ url: product.image, alt: product.name }];
     }
@@ -60,74 +60,96 @@ export default function ProductDetailPage() {
 
   const productImages = getProductImages();
   const totalImages = productImages.length;
+  const totalPairs = Math.max(1, Math.ceil(totalImages / 2));
   
-  // Clean swipe functions - NO FLASH EFFECT
-  const nextImage = useCallback(() => {
-    if (isSwiping || totalImages <= 1) return;
-    
-    setIsSwiping(true);
-    setSwipeDirection('left');
-    
-    setTimeout(() => {
-      setCurrentImageIndex((prev) => (prev + 1) % totalImages);
-      setIsSwiping(false);
-      setSwipeDirection(null);
-    }, 300);
-  }, [isSwiping, totalImages]);
-
-  const prevImage = useCallback(() => {
-    if (isSwiping || totalImages <= 1) return;
-    
-    setIsSwiping(true);
-    setSwipeDirection('right');
-    
-    setTimeout(() => {
-      setCurrentImageIndex((prev) => (prev - 1 + totalImages) % totalImages);
-      setIsSwiping(false);
-      setSwipeDirection(null);
-    }, 300);
-  }, [isSwiping, totalImages]);
-
-  // Handle touch events for swipe - SIMPLE SWIPE
-  const [touchStartX, setTouchStartX] = useState<number | null>(null);
-  const minSwipeDistance = 50;
-
-  const onTouchStart = (e: React.TouchEvent) => {
-    setTouchStartX(e.targetTouches[0].clientX);
+  // Get current image pair (2 images at a time)
+  const getCurrentPair = () => {
+    const startIndex = currentPairIndex * 2;
+    const endIndex = Math.min(startIndex + 2, totalImages);
+    return productImages.slice(startIndex, endIndex);
   };
 
-  const onTouchEnd = (e: React.TouchEvent) => {
-    if (!touchStartX || isSwiping) return;
+  // Smooth swipe functions
+  const nextPair = useCallback(() => {
+    if (isSwiping || currentPairIndex >= totalPairs - 1) return;
     
-    const touchEndX = e.changedTouches[0].clientX;
-    const distance = touchStartX - touchEndX;
+    setIsSwiping(true);
+    setCurrentPairIndex(prev => prev + 1);
     
-    if (Math.abs(distance) > minSwipeDistance) {
-      if (distance > 0) {
-        // Swipe left - next image
-        nextImage();
-      } else {
-        // Swipe right - previous image
-        prevImage();
-      }
+    setTimeout(() => {
+      setIsSwiping(false);
+      setSwipeOffset(0);
+    }, 300);
+  }, [isSwiping, currentPairIndex, totalPairs]);
+
+  const prevPair = useCallback(() => {
+    if (isSwiping || currentPairIndex <= 0) return;
+    
+    setIsSwiping(true);
+    setCurrentPairIndex(prev => prev - 1);
+    
+    setTimeout(() => {
+      setIsSwiping(false);
+      setSwipeOffset(0);
+    }, 300);
+  }, [isSwiping, currentPairIndex]);
+
+  // Handle drag/swipe for mobile - SMOOTH GALLERY SWIPE
+  const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+    if (isSwiping) return;
+    
+    setIsDragging(true);
+    if ('touches' in e) {
+      setDragStartX(e.touches[0].clientX);
+    } else {
+      setDragStartX(e.clientX);
+    }
+  };
+
+  const handleDragMove = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isDragging || isSwiping) return;
+    
+    let clientX;
+    if ('touches' in e) {
+      clientX = e.touches[0].clientX;
+    } else {
+      clientX = e.clientX;
     }
     
-    setTouchStartX(null);
+    const deltaX = clientX - dragStartX;
+    setSwipeOffset(deltaX);
   };
 
-  // Go to specific image
-  const goToImage = useCallback((index: number) => {
-    if (isSwiping || index === currentImageIndex || index < 0 || index >= totalImages) return;
+  const handleDragEnd = () => {
+    if (!isDragging || isSwiping) return;
+    
+    setIsDragging(false);
+    const threshold = 50; // Minimum swipe distance
+    
+    if (swipeOffset < -threshold && currentPairIndex < totalPairs - 1) {
+      // Swipe left - next
+      nextPair();
+    } else if (swipeOffset > threshold && currentPairIndex > 0) {
+      // Swipe right - previous
+      prevPair();
+    } else {
+      // Return to original position
+      setSwipeOffset(0);
+    }
+  };
+
+  // Go to specific pair
+  const goToPair = useCallback((index: number) => {
+    if (isSwiping || index === currentPairIndex || index < 0 || index >= totalPairs) return;
     
     setIsSwiping(true);
-    setSwipeDirection(index > currentImageIndex ? 'left' : 'right');
+    setCurrentPairIndex(index);
     
     setTimeout(() => {
-      setCurrentImageIndex(index);
       setIsSwiping(false);
-      setSwipeDirection(null);
+      setSwipeOffset(0);
     }, 300);
-  }, [isSwiping, currentImageIndex, totalImages]);
+  }, [isSwiping, currentPairIndex, totalPairs]);
 
   // Lightbox
   const [showLightbox, setShowLightbox] = useState(false);
@@ -154,14 +176,14 @@ export default function ProductDetailPage() {
         if (e.key === 'ArrowRight') nextLightboxImage();
         if (e.key === 'Escape') setShowLightbox(false);
       } else if (!isSwiping) {
-        if (e.key === 'ArrowLeft') prevImage();
-        if (e.key === 'ArrowRight') nextImage();
+        if (e.key === 'ArrowLeft') prevPair();
+        if (e.key === 'ArrowRight') nextPair();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showLightbox, prevLightboxImage, nextLightboxImage, isSwiping, prevImage, nextImage]);
+  }, [showLightbox, prevLightboxImage, nextLightboxImage, isSwiping, prevPair, nextPair]);
 
   useEffect(() => {
     if (!slug) return;
@@ -184,7 +206,6 @@ export default function ProductDetailPage() {
           return;
         }
 
-        // Transform data to match Product interface
         const transformedProduct: Product = {
           id: data.id,
           slug: data.slug,
@@ -199,7 +220,6 @@ export default function ProductDetailPage() {
           tags: data.tags || [],
           sizes: data.sizes || [],
           colors: data.colors || [],
-          // Ensure image is in correct format
           image: (data.product_images || [])
             .sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0))
             .map((img: any) => ({
@@ -275,138 +295,163 @@ export default function ProductDetailPage() {
     ? sanitizePrice(product.originalPrice) 
     : undefined;
 
-  const currentImage = productImages[currentImageIndex] || { url: '', alt: product.name };
+  const currentPair = getCurrentPair();
 
   return (
     <>
-      {/* Clean single image layout */}
+      {/* SMOOTH 2-IMAGE SWIPE LAYOUT */}
       <div className="w-full px-0 py-4 md:py-8 flex flex-col lg:flex-row gap-6 md:gap-8 lg:gap-0">
         
         {/* Left Column - Image Gallery */}
         <div className="lg:w-[60%] flex flex-col">
-          {/* Main Image Container - 75vh on mobile, full height on desktop */}
+          {/* Main Image Container - 75vh on mobile */}
           <div className="h-[75vh] md:h-[85vh] relative">
             <div 
-              ref={galleryRef}
+              ref={containerRef}
               className="relative w-full h-full overflow-hidden rounded-lg"
-              onTouchStart={onTouchStart}
-              onTouchEnd={onTouchEnd}
             >
-              {/* Current Image with smooth transition */}
-              <div 
-                className={`absolute inset-0 bg-gray-100 overflow-hidden transition-all duration-300 ease-out ${
-                  swipeDirection === 'left' ? '-translate-x-full opacity-0' :
-                  swipeDirection === 'right' ? 'translate-x-full opacity-0' :
-                  'translate-x-0 opacity-100'
+              {/* DRAGGABLE CONTAINER */}
+              <div
+                ref={galleryRef}
+                className={`flex h-full transition-transform duration-300 ease-out ${
+                  isSwiping ? 'transition-all duration-300' : ''
                 }`}
+                style={{
+                  transform: `translateX(calc(${-currentPairIndex * 100}% + ${swipeOffset}px))`,
+                  width: `${totalPairs * 100}%`
+                }}
+                onMouseDown={handleDragStart}
+                onMouseMove={handleDragMove}
+                onMouseUp={handleDragEnd}
+                onMouseLeave={handleDragEnd}
+                onTouchStart={handleDragStart}
+                onTouchMove={handleDragMove}
+                onTouchEnd={handleDragEnd}
               >
-                {currentImage.url ? (
-                  <>
-                    <Image
-                      src={currentImage.url}
-                      alt={currentImage.alt || product.name}
-                      fill
-                      className="object-cover"
-                      priority
-                      sizes="(max-width: 768px) 100vw, 60vw"
-                      onClick={() => openLightbox(currentImageIndex)}
-                    />
-                    <div 
-                      className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors duration-300 cursor-pointer"
-                      onClick={() => openLightbox(currentImageIndex)}
-                    />
-                  </>
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                    <span className="text-gray-400">No image</span>
-                  </div>
-                )}
+                {Array.from({ length: totalPairs }).map((_, pairIndex) => {
+                  const startIndex = pairIndex * 2;
+                  const pairImages = productImages.slice(startIndex, startIndex + 2);
+                  
+                  return (
+                    <div
+                      key={pairIndex}
+                      className="flex-shrink-0 w-full h-full"
+                      style={{ width: `${100 / totalPairs}%` }}
+                    >
+                      <div className="flex h-full">
+                        {/* Left Image */}
+                        <div className="w-1/2 h-full bg-gray-100 overflow-hidden relative border-r border-gray-200">
+                          {pairImages[0]?.url ? (
+                            <>
+                              <Image
+                                src={pairImages[0].url}
+                                alt={pairImages[0].alt || product.name}
+                                fill
+                                className="object-cover"
+                                sizes="(max-width: 768px) 50vw, 30vw"
+                                onClick={() => openLightbox(startIndex)}
+                              />
+                              <div 
+                                className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors duration-300 cursor-pointer"
+                                onClick={() => openLightbox(startIndex)}
+                              />
+                            </>
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                              <span className="text-gray-400">No image</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Right Image (or empty) */}
+                        <div className="w-1/2 h-full bg-gray-100 overflow-hidden relative">
+                          {pairImages[1]?.url ? (
+                            <>
+                              <Image
+                                src={pairImages[1].url}
+                                alt={pairImages[1].alt || product.name}
+                                fill
+                                className="object-cover"
+                                sizes="(max-width: 768px) 50vw, 30vw"
+                                onClick={() => openLightbox(startIndex + 1)}
+                              />
+                              <div 
+                                className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors duration-300 cursor-pointer"
+                                onClick={() => openLightbox(startIndex + 1)}
+                              />
+                            </>
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                              <span className="text-gray-400">No image</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
-              {/* Navigation Arrows - Desktop only */}
-              {!isSwiping && totalImages > 1 && (
+              {/* Navigation Arrows - Show on both mobile and desktop */}
+              {!isDragging && totalPairs > 1 && (
                 <>
                   <button
-                    onClick={prevImage}
-                    className={`absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-14 md:h-14 flex items-center justify-center rounded-full transition-all duration-300 z-10 ${
-                      'bg-black/50 backdrop-blur-sm text-white hover:bg-black/70 hover:scale-110 cursor-pointer shadow-lg'
+                    onClick={prevPair}
+                    className={`absolute left-2 md:left-4 top-1/2 -translate-y-1/2 w-8 h-8 md:w-12 md:h-12 flex items-center justify-center rounded-full transition-all duration-300 z-10 ${
+                      currentPairIndex > 0
+                        ? 'bg-black/50 backdrop-blur-sm text-white hover:bg-black/70 hover:scale-110 cursor-pointer shadow-lg'
+                        : 'opacity-0 pointer-events-none'
                     }`}
                     aria-label="Previous image"
-                    disabled={isSwiping}
+                    disabled={currentPairIndex <= 0 || isSwiping}
                   >
-                    <ChevronLeft size={20} className="md:w-8 md:h-8" />
+                    <ChevronLeft size={16} className="md:w-6 md:h-6" />
                   </button>
                   
                   <button
-                    onClick={nextImage}
-                    className={`absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-14 md:h-14 flex items-center justify-center rounded-full transition-all duration-300 z-10 ${
-                      'bg-black/50 backdrop-blur-sm text-white hover:bg-black/70 hover:scale-110 cursor-pointer shadow-lg'
+                    onClick={nextPair}
+                    className={`absolute right-2 md:right-4 top-1/2 -translate-y-1/2 w-8 h-8 md:w-12 md:h-12 flex items-center justify-center rounded-full transition-all duration-300 z-10 ${
+                      currentPairIndex < totalPairs - 1
+                        ? 'bg-black/50 backdrop-blur-sm text-white hover:bg-black/70 hover:scale-110 cursor-pointer shadow-lg'
+                        : 'opacity-0 pointer-events-none'
                     }`}
                     aria-label="Next image"
-                    disabled={isSwiping}
+                    disabled={currentPairIndex >= totalPairs - 1 || isSwiping}
                   >
-                    <ChevronRight size={20} className="md:w-8 md:h-8" />
+                    <ChevronRight size={16} className="md:w-6 md:h-6" />
                   </button>
                 </>
               )}
 
-              {/* Swipe Hint (mobile only) */}
-              {totalImages > 1 && (
-                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-white/80 bg-black/50 px-3 py-1.5 rounded-full backdrop-blur-sm z-10 animate-pulse md:hidden">
-                  ← Swipe to navigate →
+              {/* Swipe Hint */}
+              {totalImages > 2 && (
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-white/80 bg-black/50 px-3 py-1.5 rounded-full backdrop-blur-sm z-10 animate-pulse">
+                  ← Swipe or tap arrows →
                 </div>
               )}
 
               {/* Image Counter */}
-              {totalImages > 1 && (
-                <div className="absolute top-4 right-4 bg-black/50 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-sm z-10">
-                  {currentImageIndex + 1} / {totalImages}
+              {totalImages > 2 && (
+                <div className="absolute top-2 md:top-4 right-2 md:right-4 bg-black/50 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm z-10">
+                  {Math.min(currentPairIndex * 2 + 1, totalImages)}-{Math.min(currentPairIndex * 2 + 2, totalImages)} / {totalImages}
                 </div>
               )}
             </div>
           </div>
 
-          {/* Thumbnail Strip - Smaller on mobile */}
-          {productImages.length > 1 && (
+          {/* TINY DOTS INDICATOR - SUPER SMALL */}
+          {totalPairs > 1 && (
             <div className="mt-3 md:mt-4">
-              <div className="flex gap-1.5 md:gap-2 overflow-x-auto py-2 px-1 md:py-3 md:px-2 scrollbar-hide">
-                {productImages.map((image, index) => (
+              <div className="flex justify-center space-x-1">
+                {Array.from({ length: totalPairs }).map((_, index) => (
                   <button
                     key={index}
-                    onClick={() => goToImage(index)}
-                    className={`flex-shrink-0 w-12 h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 rounded-lg overflow-hidden border transition-all duration-200 ${
-                      index === currentImageIndex
-                        ? 'border-black ring-1 md:ring-2 ring-black/20 transform scale-105 shadow-md md:shadow-lg' 
-                        : 'border-transparent hover:border-gray-400 hover:scale-102'
-                    }`}
-                    aria-label={`View image ${index + 1}`}
-                    disabled={isSwiping}
-                  >
-                    <div className="relative w-full h-full bg-gray-100">
-                      <Image
-                        src={image.url}
-                        alt={image.alt || `${product.name} thumbnail ${index + 1}`}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 48px, (max-width: 1024px) 64px, 80px"
-                      />
-                    </div>
-                  </button>
-                ))}
-              </div>
-              
-              {/* Tiny dots indicator - SUPER SMALL */}
-              <div className="flex justify-center mt-3 space-x-1">
-                {productImages.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => goToImage(index)}
-                    className={`h-[1px] w-2 md:h-[2px] md:w-3 rounded-full transition-all duration-300 ${
-                      index === currentImageIndex 
-                        ? 'bg-black' 
-                        : 'bg-gray-300 hover:bg-gray-400'
-                    }`}
-                    aria-label={`Go to image ${index + 1}`}
+                    onClick={() => goToPair(index)}
+                    className="h-[1px] w-2 md:h-[2px] md:w-3 rounded-full transition-all duration-300"
+                    style={{
+                      backgroundColor: index === currentPairIndex ? '#000000' : '#d1d5db'
+                    }}
+                    aria-label={`Go to images ${index * 2 + 1}-${Math.min(index * 2 + 2, totalImages)}`}
                     disabled={isSwiping}
                   />
                 ))}
@@ -415,7 +460,7 @@ export default function ProductDetailPage() {
           )}
         </div>
 
-        {/* Right Column - Product Details */}
+        {/* Right Column - Product Details (Keep as before) */}
         <div className="lg:w-[40%] lg:sticky lg:top-8 lg:self-start lg:px-8">
           <div className="space-y-4 md:space-y-6 px-3 md:px-4 lg:px-0">
             <div>
@@ -452,6 +497,7 @@ export default function ProductDetailPage() {
               </div>
             )}
 
+            {/* ... (rest of the product details stay the same) ... */}
             {requiresSize && (
               <div>
                 <div className="flex items-center gap-1 md:gap-2 mb-2 md:mb-3">
@@ -578,7 +624,7 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      {/* Lightbox Modal */}
+      {/* Lightbox Modal (same as before) */}
       {showLightbox && productImages.length > 0 && (
         <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-2 md:p-4 animate-in fade-in">
           <button
