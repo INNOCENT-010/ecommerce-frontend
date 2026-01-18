@@ -137,7 +137,7 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
               <Link 
-                href="/products?category=dresses&tag=gowns"
+                href="/products?category=Dresses&tag=gowns"
                 className="bg-gradient-to-r from-[#D4AF37] to-[#F4D03F] text-[#5D2B42] px-6 md:px-10 py-3 md:py-4 font-bold tracking-wider hover:shadow-xl transition-all text-xs md:text-sm uppercase inline-flex items-center justify-center rounded"
               >
                 Explore Gowns

@@ -1,4 +1,4 @@
-// app/admin/layout.tsx - UPDATED VERSION WITH THEME SUPPORT
+// app/admin/layout.tsx - UPDATED VERSION WITH MOBILE RESPONSIVENESS
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -31,6 +31,7 @@ export default function AdminLayout({
   const [isLoading, setIsLoading] = useState(true);
   const [shouldRenderChildren, setShouldRenderChildren] = useState(false);
   const [adminData, setAdminData] = useState<any>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const checkAdminAuth = async () => {
@@ -113,10 +114,33 @@ export default function AdminLayout({
     return (
       <ThemeProvider attribute="class" defaultTheme="light">
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-          <AdminHeader/>
+          <AdminHeader onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)} />
           <div className="flex pt-16">
-            <AdminSidebar />
-            <main className="flex-1 p-6 lg:ml-64 transition-all duration-300">
+            {/* Sidebar - Hidden on mobile by default, shown when menuOpen is true */}
+            <div className={`
+              fixed lg:relative inset-y-0 left-0 z-30
+              transform transition-transform duration-300 ease-in-out
+              ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+              w-64 lg:w-64
+            `}>
+              <AdminSidebar onClose={() => setMobileMenuOpen(false)} />
+            </div>
+            
+            {/* Backdrop for mobile sidebar */}
+            {mobileMenuOpen && (
+              <div 
+                className="fixed inset-0 bg-black/50 z-20 lg:hidden"
+                onClick={() => setMobileMenuOpen(false)}
+              />
+            )}
+            
+            {/* Main content */}
+            <main className={`
+              flex-1 transition-all duration-300
+              p-4 sm:p-6
+              ${mobileMenuOpen ? 'lg:ml-64' : 'lg:ml-64'}
+              w-full
+            `}>
               <div className="max-w-7xl mx-auto">
                 {children}
               </div>
