@@ -30,7 +30,6 @@ function ShopThisMatch() {
   const [totalProducts, setTotalProducts] = useState(0);
   const [rotationCount, setRotationCount] = useState(0);
   const rotationIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [currentMobileIndex, setCurrentMobileIndex] = useState(0);
   
   // Fetch all products from Supabase
@@ -243,18 +242,18 @@ function ShopThisMatch() {
         {/* Mobile Navigation Arrows */}
         <button
           onClick={prevMobile}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-20 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-lg"
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-20 p-1.5 md:p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-lg"
           aria-label="Previous"
         >
-          <ChevronLeft size={20} />
+          <ChevronLeft size={18} />
         </button>
         
         <button
           onClick={nextMobile}
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-20 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-lg"
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-20 p-1.5 md:p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-lg"
           aria-label="Next"
         >
-          <ChevronRight size={20} />
+          <ChevronRight size={18} />
         </button>
         
         {/* 2 Products Grid with thin lines */}
@@ -287,14 +286,14 @@ function ShopThisMatch() {
           }
         </div>
         
-        {/* Mobile Page Indicators */}
+        {/* Mobile Page Indicators - Much smaller */}
         {mobilePagesCount > 1 && (
-          <div className="flex justify-center mt-4 space-x-1">
+          <div className="flex justify-center mt-3 space-x-1">
             {Array.from({ length: mobilePagesCount }).map((_, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentMobileIndex(index)}
-                className={`h-1 w-4 rounded-full transition-all duration-300 ${
+                className={`h-[2px] w-3 md:h-1 md:w-4 rounded-full transition-all duration-300 ${
                   index === currentMobileIndex 
                     ? 'bg-black' 
                     : 'bg-gray-200 hover:bg-gray-300'
@@ -306,7 +305,7 @@ function ShopThisMatch() {
         )}
       </div>
       
-      {/* DESKTOP: Your Original Grid Layout (NO CHANGES) */}
+      {/* DESKTOP: Original Grid Layout */}
       <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-8 h-[74vh] min-h-[550px]">
         {displayProducts.slice(0, 4).map((product) => (
           <div key={product.id} className="col-span-1 group">

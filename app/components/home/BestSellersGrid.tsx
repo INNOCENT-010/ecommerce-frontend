@@ -184,7 +184,7 @@ function BestSellersGrid() {
   
   if (loading) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 h-[70vh] min-h-[500px]">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 h-[50vh] md:h-[70vh] min-h-[400px] md:min-h-[500px]">
         {[...Array(4)].map((_, index) => (
           <div key={index} className="col-span-1">
             <div className="relative h-full bg-gray-100 rounded-lg overflow-hidden animate-pulse">
@@ -335,9 +335,9 @@ function BestSellersGrid() {
         </div>
       </div>
       
-      {/* Slide Indicators */}
+      {/* Slide Indicators - Smaller on mobile */}
       {slidesCount > 1 && (
-        <div className="flex justify-center mt-4 md:mt-8 space-x-1 md:space-x-2">
+        <div className="flex justify-center mt-3 md:mt-8 space-x-1 md:space-x-2">
           {Array.from({ length: slidesCount }).map((_, index) => (
             <button
               key={index}

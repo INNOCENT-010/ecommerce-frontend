@@ -385,9 +385,9 @@ export default function ProductCard({
                         e.stopPropagation();
                         setCurrentImageIndex(index);
                       }}
-                      className={`w-[3px] h-[3px] md:w-2 md:h-2 rounded-full transition-all ${
+                      className={`w-[2px] h-[2px] md:w-2 md:h-2 rounded-full transition-all ${
                         index === currentImageIndex 
-                          ? 'bg-white scale-125' 
+                          ? 'bg-white scale-150' 
                           : 'bg-white/50 hover:bg-white/80'
                       }`}
                       aria-label={`Go to image ${index + 1}`}
@@ -474,4 +474,3 @@ export default function ProductCard({
     </div>
   );
 }
-  
