@@ -20,7 +20,26 @@
   .safe-right {
     padding-right: env(safe-area-inset-right);
   }
-  
+  /* Force small dots for all carousel indicators */
+.carousel-dot, .image-dot, .slide-indicator, .page-indicator {
+  width: 2px !important;
+  height: 2px !important;
+  min-width: 2px !important;
+  min-height: 2px !important;
+}
+
+@media (min-width: 768px) {
+  .carousel-dot, .image-dot, .slide-indicator, .page-indicator {
+    width: 6px !important;
+    height: 6px !important;
+  }
+}
+
+/* Target any button that's used as a dot */
+button[class*="rounded-full"]:has(> :only-child:empty) {
+  width: 2px !important;
+  height: 2px !important;
+}
   /* Hide scrollbar but keep functionality */
   .no-scrollbar::-webkit-scrollbar {
     display: none;
