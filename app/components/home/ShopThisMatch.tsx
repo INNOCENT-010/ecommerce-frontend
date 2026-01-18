@@ -286,17 +286,17 @@ function ShopThisMatch() {
           }
         </div>
         
-        {/* Mobile Page Indicators - Much smaller */}
+        {/* Mobile Page Indicators - Tiny dots, hidden on mobile */}
         {mobilePagesCount > 1 && (
-          <div className="flex justify-center mt-3 space-x-1">
+          <div className="hidden md:flex justify-center mt-3 space-x-1">
             {Array.from({ length: mobilePagesCount }).map((_, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentMobileIndex(index)}
-                className={`h-[2px] w-3 md:h-1 md:w-4 rounded-full transition-all duration-300 ${
+                className={`h-[2px] w-2 rounded-full transition-all duration-300 ${
                   index === currentMobileIndex 
-                    ? 'bg-black' 
-                    : 'bg-gray-200 hover:bg-gray-300'
+                    ? 'bg-black w-3' 
+                    : 'bg-gray-300 hover:bg-gray-400'
                 }`}
                 aria-label={`Go to page ${index + 1}`}
               />

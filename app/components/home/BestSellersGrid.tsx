@@ -335,17 +335,17 @@ function BestSellersGrid() {
         </div>
       </div>
       
-      {/* Slide Indicators - Smaller on mobile */}
+      {/* Slide Indicators - Tiny dots, hidden on mobile */}
       {slidesCount > 1 && (
-        <div className="flex justify-center mt-3 md:mt-8 space-x-1 md:space-x-2">
+        <div className="hidden md:flex justify-center mt-4 space-x-1.5">
           {Array.from({ length: slidesCount }).map((_, index) => (
             <button
               key={index}
               onClick={() => setCurrentSlide(index)}
-              className={`h-1 md:h-2 rounded-full transition-all duration-300 ${
+              className={`h-[2px] w-3 rounded-full transition-all duration-300 ${
                 index === currentSlide 
-                  ? 'w-4 md:w-8 bg-black' 
-                  : 'w-1 md:w-2 bg-gray-200 hover:bg-gray-300'
+                  ? 'bg-black w-4' 
+                  : 'bg-gray-300 hover:bg-gray-400'
               }`}
               aria-label={`Go to slide ${index + 1}`}
             />
