@@ -20,8 +20,12 @@ import {
   X
 } from 'lucide-react';
 
-// Add onClose prop
-export default function AdminSidebar({ onClose }: { onClose?: () => void }) {
+// Define the props interface
+interface AdminSidebarProps {
+  onClose?: () => void;
+}
+
+export default function AdminSidebar({ onClose }: AdminSidebarProps) {
   const pathname = usePathname();
   const [user, setUser] = useState<any>(null);
 
