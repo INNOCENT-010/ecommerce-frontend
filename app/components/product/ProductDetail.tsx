@@ -27,20 +27,17 @@ export default function ProductDetailPage() {
   const [selectedColor, setSelectedColor] = useState<string | undefined>();
   const [quantity, setQuantity] = useState(1);
   
-  // Gallery state - 2 images at a time
+  // Gallery state - Keep 2 images at a time
   const [currentPairIndex, setCurrentPairIndex] = useState(0);
   const [isSwiping, setIsSwiping] = useState(false);
-  const [swipeOffset, setSwipeOffset] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStartX, setDragStartX] = useState(0);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
 
   const galleryRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const requiresSize = product?.sizes && product.sizes.length > 0;
   const requiresColor = product?.colors && product.colors.length > 0;
 
-  // Helper function to get images array
+  // Helper function to get images array in consistent format
   const getProductImages = (): ProductImage[] => {
     if (!product) return [];
     
@@ -69,7 +66,7 @@ export default function ProductDetailPage() {
     return productImages.slice(startIndex, endIndex);
   };
 
-  // Smooth gallery swipe functions
+  // Smooth gallery swipe - NO FLASH EFFECT
   const nextPair = useCallback(() => {
     if (isSwiping || currentPairIndex >= totalPairs - 1) return;
     
@@ -78,7 +75,6 @@ export default function ProductDetailPage() {
     
     setTimeout(() => {
       setIsSwiping(false);
-      setSwipeOffset(0);
     }, 300);
   }, [isSwiping, currentPairIndex, totalPairs]);
 
@@ -90,54 +86,32 @@ export default function ProductDetailPage() {
     
     setTimeout(() => {
       setIsSwiping(false);
-      setSwipeOffset(0);
     }, 300);
   }, [isSwiping, currentPairIndex]);
 
-  // Handle drag/swipe for smooth gallery experience
-  const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
-    if (isSwiping) return;
-    
-    setIsDragging(true);
-    if ('touches' in e) {
-      setDragStartX(e.touches[0].clientX);
-    } else {
-      setDragStartX(e.clientX);
-    }
-    setSwipeOffset(0);
+  // Handle touch events for smooth swipe
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.targetTouches[0].clientX);
   };
 
-  const handleDragMove = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!isDragging || isSwiping) return;
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartX || isSwiping) return;
     
-    let clientX;
-    if ('touches' in e) {
-      clientX = e.touches[0].clientX;
-      e.preventDefault(); // Prevent scrolling while swiping
-    } else {
-      clientX = e.clientX;
+    const touchEndX = e.changedTouches[0].clientX;
+    const distance = touchStartX - touchEndX;
+    const minSwipeDistance = 50;
+    
+    if (Math.abs(distance) > minSwipeDistance) {
+      if (distance > 0 && currentPairIndex < totalPairs - 1) {
+        // Swipe left - next pair
+        nextPair();
+      } else if (distance < 0 && currentPairIndex > 0) {
+        // Swipe right - previous pair
+        prevPair();
+      }
     }
     
-    const deltaX = clientX - dragStartX;
-    setSwipeOffset(deltaX);
-  };
-
-  const handleDragEnd = () => {
-    if (!isDragging || isSwiping) return;
-    
-    setIsDragging(false);
-    const threshold = 60; // Swipe distance needed to change pair
-    
-    if (swipeOffset < -threshold && currentPairIndex < totalPairs - 1) {
-      // Swipe left - go to next pair
-      nextPair();
-    } else if (swipeOffset > threshold && currentPairIndex > 0) {
-      // Swipe right - go to previous pair
-      prevPair();
-    } else {
-      // Not enough swipe - return to current position
-      setSwipeOffset(0);
-    }
+    setTouchStartX(null);
   };
 
   // Go to specific pair
@@ -149,7 +123,6 @@ export default function ProductDetailPage() {
     
     setTimeout(() => {
       setIsSwiping(false);
-      setSwipeOffset(0);
     }, 300);
   }, [isSwiping, currentPairIndex, totalPairs]);
 
@@ -301,98 +274,75 @@ export default function ProductDetailPage() {
 
   return (
     <>
-      {/* GALLERY STYLE SWIPE - 2 IMAGES AT A TIME */}
+      {/* Keep the same structure, just fix the swipe */}
       <div className="w-full px-0 py-4 md:py-8 flex flex-col lg:flex-row gap-6 md:gap-8 lg:gap-0">
         
         {/* Left Column - Image Gallery */}
         <div className="lg:w-[60%] flex flex-col">
-          {/* Main Gallery Container */}
-          <div className="h-[75vh] md:h-[85vh] relative overflow-hidden">
+          {/* Main Image Container */}
+          <div className="h-[75vh] md:h-[85vh] relative">
             <div 
-              ref={containerRef}
-              className="relative w-full h-full rounded-lg"
+              ref={galleryRef}
+              className="relative w-full h-full overflow-hidden rounded-lg"
+              onTouchStart={onTouchStart}
+              onTouchEnd={onTouchEnd}
             >
-              {/* GALLERY CONTAINER - Smooth horizontal scroll */}
-              <div
-                ref={galleryRef}
-                className="flex h-full transition-transform duration-300 ease-out"
-                style={{
-                  transform: `translateX(calc(${-currentPairIndex * 100}% + ${swipeOffset}px))`,
-                  width: `${totalPairs * 100}%`
-                }}
-                onMouseDown={handleDragStart}
-                onMouseMove={handleDragMove}
-                onMouseUp={handleDragEnd}
-                onMouseLeave={handleDragEnd}
-                onTouchStart={handleDragStart}
-                onTouchMove={handleDragMove}
-                onTouchEnd={handleDragEnd}
-              >
-                {/* Render all image pairs */}
-                {Array.from({ length: totalPairs }).map((_, pairIndex) => {
-                  const startIndex = pairIndex * 2;
-                  const pairImages = productImages.slice(startIndex, startIndex + 2);
-                  
-                  return (
-                    <div
-                      key={pairIndex}
-                      className="flex-shrink-0 w-full h-full flex"
-                      style={{ width: `${100 / totalPairs}%` }}
-                    >
-                      {/* LEFT IMAGE */}
-                      <div className="w-1/2 h-full relative bg-gray-100 overflow-hidden border-r border-gray-200">
-                        {pairImages[0]?.url ? (
-                          <>
-                            <Image
-                              src={pairImages[0].url}
-                              alt={pairImages[0].alt || product.name}
-                              fill
-                              className="object-cover"
-                              sizes="(max-width: 768px) 50vw, 30vw"
-                              onClick={() => openLightbox(startIndex)}
-                            />
-                            <div 
-                              className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors duration-300 cursor-pointer"
-                              onClick={() => openLightbox(startIndex)}
-                            />
-                          </>
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                            <span className="text-gray-400">No image</span>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* RIGHT IMAGE */}
-                      <div className="w-1/2 h-full relative bg-gray-100 overflow-hidden">
-                        {pairImages[1]?.url ? (
-                          <>
-                            <Image
-                              src={pairImages[1].url}
-                              alt={pairImages[1].alt || product.name}
-                              fill
-                              className="object-cover"
-                              sizes="(max-width: 768px) 50vw, 30vw"
-                              onClick={() => openLightbox(startIndex + 1)}
-                            />
-                            <div 
-                              className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors duration-300 cursor-pointer"
-                              onClick={() => openLightbox(startIndex + 1)}
-                            />
-                          </>
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                            <span className="text-gray-400">No image</span>
-                          </div>
-                        )}
-                      </div>
+              {/* Current Pair - Always shows 2 images */}
+              <div className={`flex h-full transition-transform duration-300 ease-out ${
+                isSwiping ? 'transition-all duration-300' : ''
+              }`}>
+                {/* Left Image */}
+                <div className="w-1/2 h-full relative bg-gray-100 overflow-hidden border-r border-gray-200">
+                  {currentPair[0]?.url ? (
+                    <>
+                      <Image
+                        src={currentPair[0].url}
+                        alt={currentPair[0].alt || product.name}
+                        fill
+                        className="object-cover"
+                        priority
+                        sizes="(max-width: 768px) 50vw, 30vw"
+                        onClick={() => openLightbox(currentPairIndex * 2)}
+                      />
+                      <div 
+                        className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors duration-300 cursor-pointer"
+                        onClick={() => openLightbox(currentPairIndex * 2)}
+                      />
+                    </>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                      <span className="text-gray-400">No image</span>
                     </div>
-                  );
-                })}
+                  )}
+                </div>
+
+                {/* Right Image */}
+                <div className="w-1/2 h-full relative bg-gray-100 overflow-hidden">
+                  {currentPair[1]?.url ? (
+                    <>
+                      <Image
+                        src={currentPair[1].url}
+                        alt={currentPair[1].alt || product.name}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 50vw, 30vw"
+                        onClick={() => openLightbox(currentPairIndex * 2 + 1)}
+                      />
+                      <div 
+                        className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors duration-300 cursor-pointer"
+                        onClick={() => openLightbox(currentPairIndex * 2 + 1)}
+                      />
+                    </>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                      <span className="text-gray-400">No image</span>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Navigation Arrows */}
-              {totalPairs > 1 && !isDragging && (
+              {/* Navigation Arrows - Show on both mobile and desktop */}
+              {totalPairs > 1 && (
                 <>
                   <button
                     onClick={prevPair}
@@ -424,7 +374,7 @@ export default function ProductDetailPage() {
 
               {/* Swipe Hint */}
               {totalImages > 2 && (
-                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-white/80 bg-black/50 px-3 py-1.5 rounded-full backdrop-blur-sm z-10 animate-pulse md:hidden">
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-white/80 bg-black/50 px-3 py-1.5 rounded-full backdrop-blur-sm z-10 animate-pulse">
                   ← Swipe to navigate →
                 </div>
               )}
@@ -438,28 +388,60 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-          {/* TINY DOTS INDICATOR */}
-          {totalPairs > 1 && (
+          {/* Thumbnail Strip - Keep as is */}
+          {productImages.length > 0 && (
             <div className="mt-3 md:mt-4">
-              <div className="flex justify-center space-x-1">
-                {Array.from({ length: totalPairs }).map((_, index) => (
+              <div className="flex gap-1.5 md:gap-2 overflow-x-auto py-2 px-1 md:py-3 md:px-2 scrollbar-hide">
+                {productImages.map((image, index) => (
                   <button
                     key={index}
-                    onClick={() => goToPair(index)}
-                    className="h-[2px] w-3 md:h-[3px] md:w-4 rounded-full transition-all duration-300"
-                    style={{
-                      backgroundColor: index === currentPairIndex ? '#000000' : '#d1d5db'
+                    onClick={() => {
+                      const pairIndex = Math.floor(index / 2);
+                      goToPair(pairIndex);
                     }}
-                    aria-label={`Go to images ${index * 2 + 1}-${Math.min(index * 2 + 2, totalImages)}`}
+                    className={`flex-shrink-0 w-12 h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 rounded-lg overflow-hidden border transition-all duration-200 ${
+                      index >= currentPairIndex * 2 && index < currentPairIndex * 2 + 2
+                        ? 'border-black ring-1 md:ring-2 ring-black/20 transform scale-105 shadow-md md:shadow-lg' 
+                        : 'border-transparent hover:border-gray-400 hover:scale-102'
+                    }`}
+                    aria-label={`View images starting at ${Math.floor(index/2) * 2 + 1}`}
                     disabled={isSwiping}
-                  />
+                  >
+                    <div className="relative w-full h-full bg-gray-100">
+                      <Image
+                        src={image.url}
+                        alt={image.alt || `${product.name} thumbnail ${index + 1}`}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 48px, (max-width: 1024px) 64px, 80px"
+                      />
+                    </div>
+                  </button>
                 ))}
               </div>
+              
+              {/* Tiny dots indicator */}
+              {totalPairs > 1 && (
+                <div className="flex justify-center mt-3 space-x-1">
+                  {Array.from({ length: totalPairs }).map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => goToPair(index)}
+                      className="h-[2px] w-3 md:h-[3px] md:w-4 rounded-full transition-all duration-300"
+                      style={{
+                        backgroundColor: index === currentPairIndex ? '#000000' : '#d1d5db'
+                      }}
+                      aria-label={`Go to images ${index * 2 + 1}-${Math.min(index * 2 + 2, totalImages)}`}
+                      disabled={isSwiping}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* Right Column - Product Details */}
+        {/* Right Column - Product Details (EXACTLY AS BEFORE) */}
         <div className="lg:w-[40%] lg:sticky lg:top-8 lg:self-start lg:px-8">
           <div className="space-y-4 md:space-y-6 px-3 md:px-4 lg:px-0">
             <div>
@@ -622,7 +604,7 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      {/* Lightbox Modal */}
+      {/* Lightbox Modal (keep as is) */}
       {showLightbox && productImages.length > 0 && (
         <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-2 md:p-4 animate-in fade-in">
           <button
