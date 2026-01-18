@@ -8,7 +8,7 @@
   .safe-top {
     padding-top: env(safe-area-inset-top);
   }
-  
+
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom);
   }
@@ -20,49 +20,7 @@
   .safe-right {
     padding-right: env(safe-area-inset-right);
   }
-  /* ========== FORCE TINY DOTS FOR ALL INDICATORS ========== */
-/* Target ALL rounded-full elements used as indicators */
-[class*="rounded-full"]:has(> :empty),
-button[class*="rounded-full"]:not(:has(> *)),
-[class*="rounded-full"]:not(:has(*)) {
-  width: 3px !important;
-  height: 3px !important;
-  min-width: 3px !important;
-  min-height: 3px !important;
-}
 
-/* Product card image dots */
-.product-card button[class*="rounded-full"] {
-  width: 3px !important;
-  height: 3px !important;
-}
-
-/* Carousel/slider dots */
-.slider-dot, .carousel-dot, .swiper-pagination-bullet {
-  width: 3px !important;
-  height: 3px !important;
-}
-
-/* Active dots slightly larger but still small */
-[class*="rounded-full"][class*="bg-"]:has(> :empty).active,
-button[class*="rounded-full"].active {
-  width: 4px !important;
-  height: 4px !important;
-}
-
-@media (min-width: 768px) {
-  [class*="rounded-full"]:has(> :empty),
-  button[class*="rounded-full"]:not(:has(> *)) {
-    width: 6px !important;
-    height: 6px !important;
-  }
-  
-  [class*="rounded-full"][class*="bg-"]:has(> :empty).active,
-  button[class*="rounded-full"].active {
-    width: 8px !important;
-    height: 8px !important;
-  }
-}
   /* Hide scrollbar but keep functionality */
   .no-scrollbar::-webkit-scrollbar {
     display: none;
@@ -72,9 +30,11 @@ button[class*="rounded-full"].active {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+  
   [data-wishlist-button] {
-  z-index: 10 !important;
-}
+    z-index: 10 !important;
+  }
+
   /* Line clamping utilities */
   .line-clamp-1 {
     overflow: hidden;
@@ -103,14 +63,56 @@ button[class*="rounded-full"].active {
   }
 }
 
+/* ========== CAROUSEL/PAGINATION DOTS ONLY ========== */
+.carousel .swiper-pagination-bullet,
+.carousel-dot,
+.slider-dot,
+[data-role="pagination-dot"],
+.pagination-dot {
+  width: 3px !important;
+  height: 3px !important;
+  min-width: 3px !important;
+  min-height: 3px !important;
+}
+
+/* Active carousel dots */
+.carousel .swiper-pagination-bullet-active,
+.carousel-dot.active,
+.slider-dot.active,
+[data-role="pagination-dot"].active,
+.pagination-dot.active {
+  width: 4px !important;
+  height: 4px !important;
+}
+
+@media (min-width: 768px) {
+  .carousel .swiper-pagination-bullet,
+  .carousel-dot,
+  .slider-dot,
+  [data-role="pagination-dot"],
+  .pagination-dot {
+    width: 6px !important;
+    height: 6px !important;
+  }
+  
+  .carousel .swiper-pagination-bullet-active,
+  .carousel-dot.active,
+  .slider-dot.active,
+  [data-role="pagination-dot"].active,
+  .pagination-dot.active {
+    width: 8px !important;
+    height: 8px !important;
+  }
+}
+
 /* ========== BASE MOBILE STYLES ========== */
 @media (max-width: 768px) {
   html {
-    font-size: 15px; /* Slightly smaller base font for mobile */
+    font-size: 15px;
   }
   
   body {
-    -webkit-text-size-adjust: 100%; /* Prevent iOS text size adjust */
+    -webkit-text-size-adjust: 100%;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -210,7 +212,7 @@ button[class*="rounded-full"].active {
   .slider-slide {
     scroll-snap-align: start;
     flex: 0 0 auto;
-    width: 85vw; /* Show most of next slide */
+    width: 85vw;
   }
   
   /* Hide scroll indicators on mobile */
@@ -293,7 +295,7 @@ button[class*="rounded-full"].active {
     box-shadow: 0 0 0 0 rgba(212, 175, 55, 0);
   }
   50% {
-    background-color: #d4af37; /* Rich gold color */
+    background-color: #d4af37;
     box-shadow: 0 0 20px 5px rgba(212, 175, 55, 0.3);
   }
   100% {
@@ -320,7 +322,7 @@ button[class*="rounded-full"].active {
     text-shadow: 0 0 0 rgba(212, 175, 55, 0);
   }
   50% {
-    color: #ffd700; /* Brighter gold for text */
+    color: #ffd700;
     text-shadow: 0 0 8px rgba(212, 175, 55, 0.5);
   }
   100% {
@@ -425,7 +427,7 @@ button[class*="rounded-full"].active {
 /* ========== PRODUCT CARD OPTIMIZATIONS ========== */
 .product-card {
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  will-change: transform; /* Optimize for animations */
+  will-change: transform;
 }
 
 .product-card:hover {
@@ -538,7 +540,6 @@ input, textarea, select {
 }
 
 /* ========== BOTTOM NAVIGATION BAR SPACING ========== */
-/* This ensures content isn't hidden behind mobile bottom nav */
 @media (max-width: 768px) {
   .has-bottom-nav {
     padding-bottom: 5rem;

@@ -1,4 +1,4 @@
-// app/page.tsx - COMPLETE UPDATED VERSION
+// app/page.tsx - COMPLETE FIXED VERSION
 'use client';
 
 import Link from 'next/link';
@@ -158,13 +158,11 @@ export default function Home() {
       {/* ===== THIN DIVIDER LINE ===== */}
       <div className="w-full border-t border-[#E8D5D3]"></div>
 
-      {/* ===== CATEGORIES SECTION - MOBILE: 2 columns with last one full width ===== */}
+      {/* ===== CATEGORIES SECTION - COMPLETELY FIXED ===== */}
       <section className="w-full py-6 md:py-0">
         <div className="w-full px-4 md:px-0">
-          {/* Mobile: 2 columns with custom handling for odd number, Desktop: Your original 5 columns */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-0 h-auto md:h-[85vh] min-h-[50vh] md:min-h-[600px]">
             {categories.map((category, index) => {
-              // On mobile, if it's the last category (5th one), make it full width
               const isLastCategory = index === categories.length - 1;
               const mobileColSpan = isLastCategory ? 'col-span-2' : 'col-span-1';
               
@@ -179,7 +177,7 @@ export default function Home() {
                     href={category.href}
                     className="group relative overflow-hidden hover:z-10 block h-[40vh] md:h-full w-full"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent z-10"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent z-10"></div>
                     <img 
                       src={category.image}
                       alt={category.name}
@@ -188,15 +186,23 @@ export default function Home() {
                         e.currentTarget.src = 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800&h=600&fit=crop';
                       }}
                     />
-                    <div className="absolute bottom-0 left-0 right-0 p-4 md:p-10 text-white z-20">
-                      <div className="inline-block bg-black/80 text-white px-3 py-2 md:px-6 md:py-3 rounded-lg">
-                        <h3 className="text-base md:text-2xl font-serif font-light tracking-widest">{category.name}</h3>
+                    
+                    {/* FIXED: Category Name Container */}
+                    <div className="absolute bottom-4 left-4 right-4 z-20">
+                      <div className="bg-black/80 text-white px-4 py-3 md:px-6 md:py-4 rounded-lg w-full">
+                        <h3 className="text-base md:text-2xl font-serif font-light tracking-widest text-center whitespace-nowrap overflow-hidden text-ellipsis">
+                          {category.name}
+                        </h3>
                       </div>
                     </div>
-                    {/* SHOP NOW button */}
-                    <div className="bg-gradient-to-r from-[#D4AF37] to-[#F4D03F] text-[#5D2B42] absolute top-4 right-4 px-3 py-1.5 md:px-5 md:py-3 rounded-full text-xs md:text-base font-bold md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 z-20 shadow-lg">
-                      SHOP NOW
+                    
+                    {/* FIXED: SHOP NOW button - Properly sized for all screens */}
+                    <div className="absolute top-4 right-4 z-20">
+                      <div className="bg-gradient-to-r from-[#D4AF37] to-[#F4D03F] text-[#5D2B42] px-4 py-2 md:px-6 md:py-3 rounded-full text-xs md:text-sm font-bold md:opacity-0 md:group-hover:opacity-100 transition-all duration-300 shadow-lg min-w-[100px] md:min-w-[120px] text-center tracking-tight md:tracking-wide">
+                        SHOP NOW
+                      </div>
                     </div>
+                    
                     <div className="absolute inset-0 bg-black/0 md:group-hover:bg-black/15 transition-colors duration-300 z-10"></div>
                   </Link>
                 </div>
@@ -212,13 +218,11 @@ export default function Home() {
       {/* ===== BEST SELLERS SECTION ===== */}
       <section className="w-full py-8 md:py-0">
         <div className="w-full px-4 md:px-0 relative">
-          {/* Mobile: Add section header */}
           <div className="md:hidden text-center mb-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Bestsellers</h2>
             <p className="text-gray-600 text-sm">Our most loved pieces</p>
           </div>
           
-          {/* Best Sellers Grid Component */}
           <BestSellersGrid />
         </div>
       </section>
@@ -242,7 +246,6 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"></div>
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20"></div>
         
-        {/* Simple Mature Buttons at Bottom - GOLD BUTTON */}
         <div className="relative z-30 h-full flex items-end justify-center pb-6 md:pb-12">
           <div className="text-center mb-4 md:mb-8">
             <div className="bg-black/80 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg mb-4 md:mb-6 inline-block">
@@ -267,13 +270,11 @@ export default function Home() {
       {/* ===== SHOP THIS MATCH SECTION ===== */}
       <section className="w-full py-8 md:py-0">
         <div className="w-full px-4 md:px-0 relative">
-          {/* Mobile: Add section header */}
           <div className="md:hidden text-center mb-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Shop This Match</h2>
             <p className="text-gray-600 text-sm">Curated selections just for you</p>
           </div>
           
-          {/* No Section Header - Just the grid */}
           <ShopThisMatch />
         </div>
       </section>
@@ -299,7 +300,6 @@ export default function Home() {
         
         <div className="absolute inset-0 bg-black/40"></div>
         
-        {/* Simple Mature Buttons at Bottom - GOLD BUTTONS */}
         <div className="relative z-30 h-full flex items-end justify-center pb-6 md:pb-12">
           <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
             <Link 
@@ -337,7 +337,6 @@ export default function Home() {
                 placeholder="Enter your email"
                 className="flex-1 border border-gray-300 px-4 py-3 focus:outline-none focus:border-[#5D2B42] text-sm bg-white rounded"
               />
-              {/* GOLD BUTTON */}
               <button 
                 type="submit"
                 className="bg-gradient-to-r from-[#D4AF37] to-[#F4D03F] text-[#5D2B42] px-6 md:px-8 py-3 font-medium hover:shadow-xl transition-colors text-sm rounded"

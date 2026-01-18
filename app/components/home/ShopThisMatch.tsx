@@ -366,7 +366,7 @@ function ShopThisMatch() {
                     href={`/products/${product.slug}`}
                     className="block w-full bg-black text-white text-center py-3 rounded-lg font-medium hover:bg-gray-900 transition-colors text-sm hover:scale-105 active:scale-95 transform transition-transform duration-200"
                   >
-                    Buy This Match For You
+                    Buy This Match 
                   </Link>
                 </div>
               </div>
@@ -386,21 +386,21 @@ function ShopThisMatch() {
           </p>
           <div className="flex items-center justify-center gap-2">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <p className="text-gray-500 text-xs md:text-sm">Auto-refreshing every 20 seconds • Rotation #{rotationCount}</p>
+            <p className="text-gray-500 text-xs md:text-sm"></p>
           </div>
         </div>
         
         {/* Mobile instruction */}
         <div className="mt-2 md:hidden">
           <p className="text-gray-400 text-xs">
-            Tap arrows to navigate • 2 products per view
+            
           </p>
         </div>
         
         {/* Desktop instruction */}
         <div className="mt-2 hidden md:block">
           <p className="text-gray-400 text-xs">
-            Click "New Picks" to refresh products • Hover for details
+             
           </p>
         </div>
       </div>

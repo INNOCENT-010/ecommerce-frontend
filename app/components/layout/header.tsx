@@ -467,7 +467,7 @@ export default function Header() {
               <Link href="/wishlist" className="relative p-1 md:p-2">
                 <Heart size={20} className="md:w-5 md:h-5" />
                 {wishlistCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-black text-white text-xs w-4 h-4 md:w-5 md:h-5 flex items-center justify-center rounded-full">
+                  <span className="absolute -top-1 -right-1 bg-black text-white text-[1opx] font-bold rounded-full w-5 h-5 md:w-6 md:h-6 flex items-center justify-center leading-none">
                     {wishlistCount > 9 ? '9+' : wishlistCount}
                   </span>
                 )}
@@ -479,7 +479,7 @@ export default function Header() {
               >
                 <ShoppingBag size={20} className="md:w-5 md:h-5 text-gray-800" />
                 {totalItems > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 md:w-5 md:h-5 flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 md:w-6 md:h-6 flex items-center justify-center leading-none">
                     {totalItems > 9 ? '9+' : totalItems}
                   </span>
                 )}
