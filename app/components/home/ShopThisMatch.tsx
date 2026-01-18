@@ -380,8 +380,8 @@ function ShopThisMatch() {
         <div className="inline-flex flex-col md:flex-row md:items-center gap-3 md:gap-6">
           <p className="text-gray-500 text-sm">
             {typeof window !== 'undefined' && window.innerWidth < 768 
-              ? `Showing ${currentMobileProducts.length} of ${displayProducts.length} products`
-              : `Showing ${displayProducts.slice(0, 4).length} of ${displayProducts.length} products`
+              
+            
             }
           </p>
           <div className="flex items-center justify-center gap-2">
