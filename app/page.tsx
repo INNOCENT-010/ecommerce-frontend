@@ -24,22 +24,22 @@ export default function Home() {
     },
     { 
       name: 'Gowns', 
-      href: '/products?category=dresses&tag=gowns',
+      href: '/products?category=Dresses&tag=gowns',
       image: HOMEPAGE_MEDIA.CATEGORIES.GOWNS
     },
     { 
       name: 'Tops', 
-      href: '/products?category=Styles&tag=tops',
+      href: '/products?category=Styles&tag=tops-going-out',
       image: HOMEPAGE_MEDIA.CATEGORIES.TOPS
     },
     { 
       name: 'Brown', 
-      href: '/products?category=dresses&tag=brown',
+      href: '/products?category=Dresses&tag=brown',
       image: HOMEPAGE_MEDIA.CATEGORIES.BROWN
     },
     { 
       name: 'Backless', 
-      href: '/products?category=dresses&tag=backless',
+      href: '/products?category=Dresses&tag=backless',
       image: HOMEPAGE_MEDIA.CATEGORIES.BACKLESS
     },
   ];

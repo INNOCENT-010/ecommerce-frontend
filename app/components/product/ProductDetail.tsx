@@ -27,7 +27,7 @@ export default function ProductDetailPage() {
   const [selectedColor, setSelectedColor] = useState<string | undefined>();
   const [quantity, setQuantity] = useState(1);
   
-  // SMOOTH SWIPE - Keep 2 images but swipe as single gallery
+  // Gallery state - 2 images at a time
   const [currentPairIndex, setCurrentPairIndex] = useState(0);
   const [isSwiping, setIsSwiping] = useState(false);
   const [swipeOffset, setSwipeOffset] = useState(0);
@@ -40,7 +40,7 @@ export default function ProductDetailPage() {
   const requiresSize = product?.sizes && product.sizes.length > 0;
   const requiresColor = product?.colors && product.colors.length > 0;
 
-  // Helper function to get images array in consistent format
+  // Helper function to get images array
   const getProductImages = (): ProductImage[] => {
     if (!product) return [];
     
@@ -69,7 +69,7 @@ export default function ProductDetailPage() {
     return productImages.slice(startIndex, endIndex);
   };
 
-  // Smooth swipe functions
+  // Smooth gallery swipe functions
   const nextPair = useCallback(() => {
     if (isSwiping || currentPairIndex >= totalPairs - 1) return;
     
@@ -94,7 +94,7 @@ export default function ProductDetailPage() {
     }, 300);
   }, [isSwiping, currentPairIndex]);
 
-  // Handle drag/swipe for mobile - SMOOTH GALLERY SWIPE
+  // Handle drag/swipe for smooth gallery experience
   const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
     if (isSwiping) return;
     
@@ -104,6 +104,7 @@ export default function ProductDetailPage() {
     } else {
       setDragStartX(e.clientX);
     }
+    setSwipeOffset(0);
   };
 
   const handleDragMove = (e: React.MouseEvent | React.TouchEvent) => {
@@ -112,6 +113,7 @@ export default function ProductDetailPage() {
     let clientX;
     if ('touches' in e) {
       clientX = e.touches[0].clientX;
+      e.preventDefault(); // Prevent scrolling while swiping
     } else {
       clientX = e.clientX;
     }
@@ -124,16 +126,16 @@ export default function ProductDetailPage() {
     if (!isDragging || isSwiping) return;
     
     setIsDragging(false);
-    const threshold = 50; // Minimum swipe distance
+    const threshold = 60; // Swipe distance needed to change pair
     
     if (swipeOffset < -threshold && currentPairIndex < totalPairs - 1) {
-      // Swipe left - next
+      // Swipe left - go to next pair
       nextPair();
     } else if (swipeOffset > threshold && currentPairIndex > 0) {
-      // Swipe right - previous
+      // Swipe right - go to previous pair
       prevPair();
     } else {
-      // Return to original position
+      // Not enough swipe - return to current position
       setSwipeOffset(0);
     }
   };
@@ -299,23 +301,21 @@ export default function ProductDetailPage() {
 
   return (
     <>
-      {/* SMOOTH 2-IMAGE SWIPE LAYOUT */}
+      {/* GALLERY STYLE SWIPE - 2 IMAGES AT A TIME */}
       <div className="w-full px-0 py-4 md:py-8 flex flex-col lg:flex-row gap-6 md:gap-8 lg:gap-0">
         
         {/* Left Column - Image Gallery */}
         <div className="lg:w-[60%] flex flex-col">
-          {/* Main Image Container - 75vh on mobile */}
-          <div className="h-[75vh] md:h-[85vh] relative">
+          {/* Main Gallery Container */}
+          <div className="h-[75vh] md:h-[85vh] relative overflow-hidden">
             <div 
               ref={containerRef}
-              className="relative w-full h-full overflow-hidden rounded-lg"
+              className="relative w-full h-full rounded-lg"
             >
-              {/* DRAGGABLE CONTAINER */}
+              {/* GALLERY CONTAINER - Smooth horizontal scroll */}
               <div
                 ref={galleryRef}
-                className={`flex h-full transition-transform duration-300 ease-out ${
-                  isSwiping ? 'transition-all duration-300' : ''
-                }`}
+                className="flex h-full transition-transform duration-300 ease-out"
                 style={{
                   transform: `translateX(calc(${-currentPairIndex * 100}% + ${swipeOffset}px))`,
                   width: `${totalPairs * 100}%`
@@ -328,6 +328,7 @@ export default function ProductDetailPage() {
                 onTouchMove={handleDragMove}
                 onTouchEnd={handleDragEnd}
               >
+                {/* Render all image pairs */}
                 {Array.from({ length: totalPairs }).map((_, pairIndex) => {
                   const startIndex = pairIndex * 2;
                   const pairImages = productImages.slice(startIndex, startIndex + 2);
@@ -335,65 +336,63 @@ export default function ProductDetailPage() {
                   return (
                     <div
                       key={pairIndex}
-                      className="flex-shrink-0 w-full h-full"
+                      className="flex-shrink-0 w-full h-full flex"
                       style={{ width: `${100 / totalPairs}%` }}
                     >
-                      <div className="flex h-full">
-                        {/* Left Image */}
-                        <div className="w-1/2 h-full bg-gray-100 overflow-hidden relative border-r border-gray-200">
-                          {pairImages[0]?.url ? (
-                            <>
-                              <Image
-                                src={pairImages[0].url}
-                                alt={pairImages[0].alt || product.name}
-                                fill
-                                className="object-cover"
-                                sizes="(max-width: 768px) 50vw, 30vw"
-                                onClick={() => openLightbox(startIndex)}
-                              />
-                              <div 
-                                className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors duration-300 cursor-pointer"
-                                onClick={() => openLightbox(startIndex)}
-                              />
-                            </>
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                              <span className="text-gray-400">No image</span>
-                            </div>
-                          )}
-                        </div>
-                        
-                        {/* Right Image (or empty) */}
-                        <div className="w-1/2 h-full bg-gray-100 overflow-hidden relative">
-                          {pairImages[1]?.url ? (
-                            <>
-                              <Image
-                                src={pairImages[1].url}
-                                alt={pairImages[1].alt || product.name}
-                                fill
-                                className="object-cover"
-                                sizes="(max-width: 768px) 50vw, 30vw"
-                                onClick={() => openLightbox(startIndex + 1)}
-                              />
-                              <div 
-                                className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors duration-300 cursor-pointer"
-                                onClick={() => openLightbox(startIndex + 1)}
-                              />
-                            </>
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                              <span className="text-gray-400">No image</span>
-                            </div>
-                          )}
-                        </div>
+                      {/* LEFT IMAGE */}
+                      <div className="w-1/2 h-full relative bg-gray-100 overflow-hidden border-r border-gray-200">
+                        {pairImages[0]?.url ? (
+                          <>
+                            <Image
+                              src={pairImages[0].url}
+                              alt={pairImages[0].alt || product.name}
+                              fill
+                              className="object-cover"
+                              sizes="(max-width: 768px) 50vw, 30vw"
+                              onClick={() => openLightbox(startIndex)}
+                            />
+                            <div 
+                              className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors duration-300 cursor-pointer"
+                              onClick={() => openLightbox(startIndex)}
+                            />
+                          </>
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                            <span className="text-gray-400">No image</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* RIGHT IMAGE */}
+                      <div className="w-1/2 h-full relative bg-gray-100 overflow-hidden">
+                        {pairImages[1]?.url ? (
+                          <>
+                            <Image
+                              src={pairImages[1].url}
+                              alt={pairImages[1].alt || product.name}
+                              fill
+                              className="object-cover"
+                              sizes="(max-width: 768px) 50vw, 30vw"
+                              onClick={() => openLightbox(startIndex + 1)}
+                            />
+                            <div 
+                              className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors duration-300 cursor-pointer"
+                              onClick={() => openLightbox(startIndex + 1)}
+                            />
+                          </>
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                            <span className="text-gray-400">No image</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
                 })}
               </div>
 
-              {/* Navigation Arrows - Show on both mobile and desktop */}
-              {!isDragging && totalPairs > 1 && (
+              {/* Navigation Arrows */}
+              {totalPairs > 1 && !isDragging && (
                 <>
                   <button
                     onClick={prevPair}
@@ -402,7 +401,7 @@ export default function ProductDetailPage() {
                         ? 'bg-black/50 backdrop-blur-sm text-white hover:bg-black/70 hover:scale-110 cursor-pointer shadow-lg'
                         : 'opacity-0 pointer-events-none'
                     }`}
-                    aria-label="Previous image"
+                    aria-label="Previous images"
                     disabled={currentPairIndex <= 0 || isSwiping}
                   >
                     <ChevronLeft size={16} className="md:w-6 md:h-6" />
@@ -415,7 +414,7 @@ export default function ProductDetailPage() {
                         ? 'bg-black/50 backdrop-blur-sm text-white hover:bg-black/70 hover:scale-110 cursor-pointer shadow-lg'
                         : 'opacity-0 pointer-events-none'
                     }`}
-                    aria-label="Next image"
+                    aria-label="Next images"
                     disabled={currentPairIndex >= totalPairs - 1 || isSwiping}
                   >
                     <ChevronRight size={16} className="md:w-6 md:h-6" />
@@ -425,8 +424,8 @@ export default function ProductDetailPage() {
 
               {/* Swipe Hint */}
               {totalImages > 2 && (
-                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-white/80 bg-black/50 px-3 py-1.5 rounded-full backdrop-blur-sm z-10 animate-pulse">
-                  ← Swipe or tap arrows →
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-white/80 bg-black/50 px-3 py-1.5 rounded-full backdrop-blur-sm z-10 animate-pulse md:hidden">
+                  ← Swipe to navigate →
                 </div>
               )}
 
@@ -439,7 +438,7 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-          {/* TINY DOTS INDICATOR - SUPER SMALL */}
+          {/* TINY DOTS INDICATOR */}
           {totalPairs > 1 && (
             <div className="mt-3 md:mt-4">
               <div className="flex justify-center space-x-1">
@@ -447,7 +446,7 @@ export default function ProductDetailPage() {
                   <button
                     key={index}
                     onClick={() => goToPair(index)}
-                    className="h-[1px] w-2 md:h-[2px] md:w-3 rounded-full transition-all duration-300"
+                    className="h-[2px] w-3 md:h-[3px] md:w-4 rounded-full transition-all duration-300"
                     style={{
                       backgroundColor: index === currentPairIndex ? '#000000' : '#d1d5db'
                     }}
@@ -460,7 +459,7 @@ export default function ProductDetailPage() {
           )}
         </div>
 
-        {/* Right Column - Product Details (Keep as before) */}
+        {/* Right Column - Product Details */}
         <div className="lg:w-[40%] lg:sticky lg:top-8 lg:self-start lg:px-8">
           <div className="space-y-4 md:space-y-6 px-3 md:px-4 lg:px-0">
             <div>
@@ -497,7 +496,6 @@ export default function ProductDetailPage() {
               </div>
             )}
 
-            {/* ... (rest of the product details stay the same) ... */}
             {requiresSize && (
               <div>
                 <div className="flex items-center gap-1 md:gap-2 mb-2 md:mb-3">
@@ -624,7 +622,7 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      {/* Lightbox Modal (same as before) */}
+      {/* Lightbox Modal */}
       {showLightbox && productImages.length > 0 && (
         <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-2 md:p-4 animate-in fade-in">
           <button
