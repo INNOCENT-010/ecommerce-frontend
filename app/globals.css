@@ -63,24 +63,31 @@
   }
 }
 
-/* ========== SUBTLE CAROUSEL DOTS ========== */
-/* Make ALL carousel dots very subtle and small */
-.carousel .swiper-pagination-bullet,
-.carousel-dot,
-.slider-dot,
-[data-role="pagination-dot"],
-.pagination-dot,
-.swiper-pagination-bullet,
-[data-carousel-dot] {
-  width: 2px !important;
-  height: 2px !important;
-  min-width: 2px !important;
-  min-height: 2px !important;
-  opacity: 0.2 !important;
-  background-color: #000 !important;
-  margin: 0 1px !important;
+/* ========== REMOVE CAROUSEL DOTS ONLY FROM PRODUCT CARDS ========== */
+/* Target product cards in BestsellerGrid and ShopThisMatch */
+.product-card .swiper-pagination,
+.product-card [class*="pagination"],
+.product-card .carousel-indicators,
+.product-card .image-slider .swiper-pagination,
+.product-card .image-slider [class*="pagination"],
+.BestSellersGrid .product-card .swiper-pagination,
+.BestSellersGrid .product-card [class*="pagination"],
+.ShopThisMatch .product-card .swiper-pagination,
+.ShopThisMatch .product-card [class*="pagination"] {
+  display: none !important;
 }
 
+/* Target individual dots inside product cards */
+.product-card .swiper-pagination-bullet,
+.product-card [class*="pagination-bullet"],
+.product-card [class*="carousel-dot"],
+.product-card [class*="slider-dot"],
+.product-card [data-role="carousel-dot"],
+.product-card [data-role="pagination-dot"],
+.BestSellersGrid .product-card .swiper-pagination-bullet,
+.ShopThisMatch .product-card .swiper-pagination-bullet {
+  display: none !important;
+}
 /* Active dots slightly more visible but still subtle */
 .carousel .swiper-pagination-bullet-active,
 .carousel-dot.active,
